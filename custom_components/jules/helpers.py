@@ -30,7 +30,7 @@ def get_device_info(entry: ConfigEntry, sw_version: str | None = None) -> Device
     version = sw_version or get_jules_version(entry)
     return DeviceInfo(
         identifiers={(DOMAIN, entry.entry_id)},
-        name="Google Jules",
+        name=entry.title or "Google Jules",
         manufacturer="Google Labs",
         model="Autonomous AI Coding Agent",
         sw_version=version,

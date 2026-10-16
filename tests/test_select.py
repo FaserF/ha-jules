@@ -21,7 +21,7 @@ async def test_selects(mock_coordinator, mock_config_entry):
 
     source_select = JulesActiveSourceSelect(mock_coordinator, mock_config_entry)
     source_select.hass = MagicMock()
-    assert "FaserF/ha-jules" in source_select.options
+    assert "sources/github/FaserF/ha-jules" in source_select.options
 
     branch_select = JulesDefaultBranchSelect(mock_coordinator, mock_config_entry)
     branch_select.hass = MagicMock()

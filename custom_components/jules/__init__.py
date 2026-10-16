@@ -69,7 +69,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     dev_reg.async_get_or_create(
         config_entry_id=entry.entry_id,
         identifiers={(DOMAIN, entry.entry_id)},
-        name="Google Jules",
+        name=entry.title or "Google Jules",
         manufacturer="Google Labs",
         model="Autonomous AI Coding Agent",
         sw_version=get_jules_version(entry),

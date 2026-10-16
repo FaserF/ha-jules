@@ -86,8 +86,11 @@ class JulesConfigFlow(ConfigFlow, domain=DOMAIN):
                 LOGGER.exception("Unexpected error during connection test: %s", err)
                 errors["base"] = "unknown"
             else:
+                title = (
+                    user_input.get("name") or user_input.get("title") or DEFAULT_NAME
+                )
                 return self.async_create_entry(
-                    title=user_input.get("title") or DEFAULT_NAME,
+                    title=title,
                     data=user_input,
                 )
 
@@ -95,6 +98,9 @@ class JulesConfigFlow(ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(CONF_API_KEY): TextSelector(
                     TextSelectorConfig(type=TextSelectorType.PASSWORD)
+                ),
+                vol.Optional("name"): TextSelector(
+                    TextSelectorConfig(type=TextSelectorType.TEXT)
                 ),
                 vol.Optional(CONF_API_URL, default=DEFAULT_API_URL): TextSelector(
                     TextSelectorConfig(type=TextSelectorType.URL)
