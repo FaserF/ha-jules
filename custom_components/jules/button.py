@@ -11,7 +11,13 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .client import JulesClient
-from .const import DATA_CLIENT, DATA_COORDINATOR, DEFAULT_NAME, DOMAIN, STATE_AWAITING_APPROVAL
+from .const import (
+    DATA_CLIENT,
+    DATA_COORDINATOR,
+    DEFAULT_NAME,
+    DOMAIN,
+    STATE_AWAITING_APPROVAL,
+)
 from .coordinator import JulesDataUpdateCoordinator
 
 
@@ -34,9 +40,7 @@ async def async_setup_entry(
     )
 
 
-class JulesRefreshButton(
-    CoordinatorEntity[JulesDataUpdateCoordinator], ButtonEntity
-):
+class JulesRefreshButton(CoordinatorEntity[JulesDataUpdateCoordinator], ButtonEntity):
     """Button to force refresh Jules sessions and metrics."""
 
     def __init__(

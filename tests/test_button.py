@@ -1,6 +1,7 @@
 """Tests for the Jules button platform."""
 
 from unittest.mock import AsyncMock, MagicMock
+
 import pytest
 from homeassistant.exceptions import HomeAssistantError
 
@@ -52,7 +53,9 @@ async def test_approve_plan_button_press_success(
 async def test_approve_plan_button_press_no_pending(
     mock_coordinator, mock_client, mock_config_entry
 ):
-    mock_coordinator.data = {"sessions": [{"name": "sessions/11", "state": "COMPLETED"}]}
+    mock_coordinator.data = {
+        "sessions": [{"name": "sessions/11", "state": "COMPLETED"}]
+    }
     btn = JulesApprovePlanButton(mock_coordinator, mock_client, mock_config_entry)
 
     with pytest.raises(HomeAssistantError):

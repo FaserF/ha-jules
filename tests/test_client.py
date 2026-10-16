@@ -1,6 +1,7 @@
 """Tests for the JulesClient."""
 
 from unittest.mock import AsyncMock, MagicMock
+
 import aiohttp
 import pytest
 
@@ -8,7 +9,6 @@ from custom_components.jules.client import (
     CannotConnect,
     InvalidAuth,
     JulesClient,
-    JulesError,
     SessionNotFoundError,
 )
 
@@ -31,7 +31,11 @@ def make_mock_response(status=200, json_data=None, text=""):
 
 @pytest.mark.asyncio
 async def test_client_init_and_headers(mock_session):
-    client = JulesClient(mock_session, api_key="secret-key", api_url="https://jules.googleapis.com/v1alpha/")
+    client = JulesClient(
+        mock_session,
+        api_key="secret-key",
+        api_url="https://jules.googleapis.com/v1alpha/",
+    )
     assert client.base_url == "https://jules.googleapis.com/v1alpha"
 
     headers = client._get_headers()
@@ -42,7 +46,9 @@ async def test_client_init_and_headers(mock_session):
 
 @pytest.mark.asyncio
 async def test_async_test_connection_success(mock_session):
-    mock_session.request = MagicMock(return_value=make_mock_response(200, {"sessions": []}))
+    mock_session.request = MagicMock(
+        return_value=make_mock_response(200, {"sessions": []})
+    )
     client = JulesClient(mock_session, api_key="valid-key")
 
     result = await client.async_test_connection()
@@ -51,7 +57,9 @@ async def test_async_test_connection_success(mock_session):
 
 @pytest.mark.asyncio
 async def test_async_test_connection_invalid_auth(mock_session):
-    mock_session.request = MagicMock(return_value=make_mock_response(401, text="Unauthorized"))
+    mock_session.request = MagicMock(
+        return_value=make_mock_response(401, text="Unauthorized")
+    )
     client = JulesClient(mock_session, api_key="bad-key")
 
     with pytest.raises(InvalidAuth):
@@ -69,7 +77,11 @@ async def test_async_test_connection_cannot_connect(mock_session):
 
 @pytest.mark.asyncio
 async def test_async_get_sources(mock_session):
-    mock_data = {"sources": [{"name": "sources/github/FaserF/ha-jules", "id": "github/FaserF/ha-jules"}]}
+    mock_data = {
+        "sources": [
+            {"name": "sources/github/FaserF/ha-jules", "id": "github/FaserF/ha-jules"}
+        ]
+    }
     mock_session.request = MagicMock(return_value=make_mock_response(200, mock_data))
     client = JulesClient(mock_session, api_key="key")
 
@@ -125,7 +137,9 @@ async def test_async_create_session(mock_session):
 
 @pytest.mark.asyncio
 async def test_async_approve_plan(mock_session):
-    mock_session.request = MagicMock(return_value=make_mock_response(200, {"status": "approved"}))
+    mock_session.request = MagicMock(
+        return_value=make_mock_response(200, {"status": "approved"})
+    )
     client = JulesClient(mock_session, api_key="key")
 
     result = await client.async_approve_plan("sessions/1001")
@@ -134,7 +148,9 @@ async def test_async_approve_plan(mock_session):
 
 @pytest.mark.asyncio
 async def test_async_send_message(mock_session):
-    mock_session.request = MagicMock(return_value=make_mock_response(200, {"status": "sent"}))
+    mock_session.request = MagicMock(
+        return_value=make_mock_response(200, {"status": "sent"})
+    )
     client = JulesClient(mock_session, api_key="key")
 
     result = await client.async_send_message("sessions/1001", "Continue with task")
@@ -154,7 +170,9 @@ async def test_async_get_activities(mock_session):
 
 @pytest.mark.asyncio
 async def test_client_not_found(mock_session):
-    mock_session.request = MagicMock(return_value=make_mock_response(404, text="Not Found"))
+    mock_session.request = MagicMock(
+        return_value=make_mock_response(404, text="Not Found")
+    )
     client = JulesClient(mock_session, api_key="key")
 
     with pytest.raises(SessionNotFoundError):

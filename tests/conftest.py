@@ -494,7 +494,9 @@ sel_mod.NumberSelectorConfig = MagicMock
 sel_mod.NumberSelectorMode = types.SimpleNamespace(BOX="box", SLIDER="slider")
 sel_mod.TextSelector = lambda *args, **kwargs: MagicMock()
 sel_mod.TextSelectorConfig = MagicMock
-sel_mod.TextSelectorType = types.SimpleNamespace(TEXT="text", PASSWORD="password", URL="url")
+sel_mod.TextSelectorType = types.SimpleNamespace(
+    TEXT="text", PASSWORD="password", URL="url"
+)
 
 cv_mod = sys.modules["homeassistant.helpers.config_validation"]
 cv_mod.string = str

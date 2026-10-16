@@ -1,23 +1,32 @@
 """Tests for integration lifecycle in __init__.py."""
 
 from unittest.mock import AsyncMock, patch
+
 import pytest
 
-from custom_components.jules import async_reload_entry, async_setup_entry, async_unload_entry
+from custom_components.jules import (
+    async_reload_entry,
+    async_setup_entry,
+    async_unload_entry,
+)
 from custom_components.jules.const import DOMAIN
 
 
 @pytest.mark.asyncio
 async def test_init_setup_and_unload(hass, mock_config_entry):
-    with patch(
-        "custom_components.jules.coordinator.JulesDataUpdateCoordinator.async_config_entry_first_refresh",
-        new=AsyncMock(),
-    ), patch(
-        "custom_components.jules.services.async_setup_services",
-        new=AsyncMock(),
-    ), patch(
-        "custom_components.jules.services.async_unload_services",
-        new=AsyncMock(),
+    with (
+        patch(
+            "custom_components.jules.coordinator.JulesDataUpdateCoordinator.async_config_entry_first_refresh",
+            new=AsyncMock(),
+        ),
+        patch(
+            "custom_components.jules.services.async_setup_services",
+            new=AsyncMock(),
+        ),
+        patch(
+            "custom_components.jules.services.async_unload_services",
+            new=AsyncMock(),
+        ),
     ):
         setup_ok = await async_setup_entry(hass, mock_config_entry)
         assert setup_ok is True

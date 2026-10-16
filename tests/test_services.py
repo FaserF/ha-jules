@@ -1,8 +1,8 @@
 """Tests for Jules services."""
 
 from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from homeassistant.exceptions import HomeAssistantError
 
 from custom_components.jules.const import (
     DATA_CLIENT,
@@ -20,7 +20,11 @@ from custom_components.jules.services import async_setup_services, async_unload_
 def mock_client():
     client = MagicMock()
     client.async_create_session = AsyncMock(
-        return_value={"name": "sessions/200", "title": "Service session", "state": "QUEUED"}
+        return_value={
+            "name": "sessions/200",
+            "title": "Service session",
+            "state": "QUEUED",
+        }
     )
     client.async_approve_plan = AsyncMock(return_value={"status": "approved"})
     client.async_send_message = AsyncMock(return_value={"status": "message_sent"})
@@ -39,7 +43,9 @@ def mock_coordinator():
 
 
 @pytest.mark.asyncio
-async def test_services_lifecycle(hass, mock_config_entry, mock_client, mock_coordinator):
+async def test_services_lifecycle(
+    hass, mock_config_entry, mock_client, mock_coordinator
+):
     mock_coordinator.config_entry = mock_config_entry
     hass.data = {
         DOMAIN: {
@@ -57,7 +63,9 @@ async def test_services_lifecycle(hass, mock_config_entry, mock_client, mock_coo
 
     hass.services.async_register = mock_register
     hass.services.has_service = lambda domain, service: service in registered_services
-    hass.services.async_remove = lambda domain, service: registered_services.pop(service, None)
+    hass.services.async_remove = lambda domain, service: registered_services.pop(
+        service, None
+    )
 
     await async_setup_services(hass)
     assert SERVICE_CREATE_SESSION in registered_services
@@ -85,7 +93,9 @@ async def test_services_lifecycle(hass, mock_config_entry, mock_client, mock_coo
     call_msg.data = {"message": "Great job, wrap it up"}
     res_msg = await registered_services[SERVICE_SEND_MESSAGE](call_msg)
     assert res_msg["result"]["status"] == "message_sent"
-    mock_client.async_send_message.assert_called_once_with("sessions/201", "Great job, wrap it up")
+    mock_client.async_send_message.assert_called_once_with(
+        "sessions/201", "Great job, wrap it up"
+    )
 
     # Test refresh_sessions
     call_refresh = MagicMock()

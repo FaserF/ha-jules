@@ -1,11 +1,11 @@
 """Tests for the Jules config flow."""
 
 from unittest.mock import AsyncMock, patch
+
 import pytest
 
 from custom_components.jules.client import CannotConnect, InvalidAuth
 from custom_components.jules.config_flow import JulesConfigFlow, JulesOptionsFlowHandler
-from custom_components.jules.const import DOMAIN
 
 
 @pytest.mark.asyncio

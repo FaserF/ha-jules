@@ -87,8 +87,7 @@ SENSOR_DESCRIPTIONS: tuple[JulesSensorDescription, ...] = (
         value_fn=lambda data: data.get("sources_count", 0),
         attributes_fn=lambda data: {
             "sources": [
-                s.get("name") or s.get("id") or s
-                for s in data.get("sources", [])
+                s.get("name") or s.get("id") or s for s in data.get("sources", [])
             ]
         },
     ),
@@ -110,7 +109,9 @@ SENSOR_DESCRIPTIONS: tuple[JulesSensorDescription, ...] = (
 )
 
 
-def _extract_latest_session_attributes(session: dict[str, Any] | None) -> dict[str, Any]:
+def _extract_latest_session_attributes(
+    session: dict[str, Any] | None,
+) -> dict[str, Any]:
     """Extract formatted attributes from session dictionary."""
     if not session:
         return {}

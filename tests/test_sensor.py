@@ -1,6 +1,7 @@
 """Tests for the Jules sensor platform."""
 
 from unittest.mock import MagicMock
+
 import pytest
 
 from custom_components.jules.const import DATA_COORDINATOR, DOMAIN
@@ -61,7 +62,9 @@ async def test_sensors_values(mock_coordinator, mock_config_entry):
 
 @pytest.mark.asyncio
 async def test_async_setup_entry(hass, mock_config_entry, mock_coordinator):
-    hass.data = {DOMAIN: {mock_config_entry.entry_id: {DATA_COORDINATOR: mock_coordinator}}}
+    hass.data = {
+        DOMAIN: {mock_config_entry.entry_id: {DATA_COORDINATOR: mock_coordinator}}
+    }
     added_entities = []
 
     def async_add_entities(entities):
