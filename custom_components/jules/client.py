@@ -541,6 +541,7 @@ class JulesClient:
                                 "status": "ok",
                                 "latency_ms": latency_ms,
                                 "reachable": True,
+                                "version": "v1alpha",
                             }
             except Exception as exc:
                 LOGGER.debug("OmniRoute /api/health unavailable: %s", exc)
@@ -549,7 +550,12 @@ class JulesClient:
         try:
             await self.async_test_connection()
             latency_ms = round((time.perf_counter() - start) * 1000, 2)
-            return {"status": "ok", "latency_ms": latency_ms, "reachable": True}
+            return {
+                "status": "ok",
+                "latency_ms": latency_ms,
+                "reachable": True,
+                "version": "v1alpha",
+            }
         except Exception as err:
             return {
                 "status": "offline",

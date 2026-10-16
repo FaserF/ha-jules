@@ -61,6 +61,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         DATA_COORDINATOR: coordinator,
     }
 
+    from homeassistant.helpers import device_registry as dr
+
+    from .helpers import get_jules_version
+
+    dev_reg = dr.async_get(hass)
+    dev_reg.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, entry.entry_id)},
+        name="Google Jules",
+        manufacturer="Google Labs",
+        model="Autonomous AI Coding Agent",
+        sw_version=get_jules_version(entry),
+        configuration_url=entry.data.get(CONF_API_URL, "https://jules.google.com"),
+    )
+
     # Register services
     await async_setup_services(hass)
 

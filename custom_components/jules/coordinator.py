@@ -165,6 +165,7 @@ class JulesDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 self._previous_states[s_id] = state
 
         return {
+            "version": health.get("version") or "v1alpha",
             "total_sessions": total_sessions,
             "active_sessions": active_sessions,
             "awaiting_approval": awaiting_approval,
