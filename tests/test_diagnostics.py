@@ -1,6 +1,7 @@
 """Tests for Jules diagnostics."""
 
 from unittest.mock import MagicMock
+
 import pytest
 
 from custom_components.jules.const import DATA_COORDINATOR, DOMAIN

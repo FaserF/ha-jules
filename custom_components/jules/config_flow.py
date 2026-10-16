@@ -211,9 +211,7 @@ class JulesOptionsFlowHandler(OptionsFlow):
                 ): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
                 vol.Optional(
                     CONF_DEFAULT_BRANCH,
-                    default=self.config_entry.options.get(
-                        CONF_DEFAULT_BRANCH, "main"
-                    ),
+                    default=self.config_entry.options.get(CONF_DEFAULT_BRANCH, "main"),
                 ): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
             }
         )

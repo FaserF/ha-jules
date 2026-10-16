@@ -58,7 +58,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Listen for option changes
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
-    LOGGER.info("Google Jules integration successfully loaded for entry %s", entry.title)
+    LOGGER.info(
+        "Google Jules integration successfully loaded for entry %s", entry.title
+    )
     return True
 
 

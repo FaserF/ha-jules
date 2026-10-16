@@ -1,6 +1,7 @@
 """Tests for the Jules binary sensor platform."""
 
 from unittest.mock import MagicMock
+
 import pytest
 
 from custom_components.jules.binary_sensor import (
@@ -44,8 +45,12 @@ async def test_binary_sensors(mock_coordinator, mock_config_entry):
 
 
 @pytest.mark.asyncio
-async def test_async_setup_entry_binary_sensor(hass, mock_config_entry, mock_coordinator):
-    hass.data = {DOMAIN: {mock_config_entry.entry_id: {DATA_COORDINATOR: mock_coordinator}}}
+async def test_async_setup_entry_binary_sensor(
+    hass, mock_config_entry, mock_coordinator
+):
+    hass.data = {
+        DOMAIN: {mock_config_entry.entry_id: {DATA_COORDINATOR: mock_coordinator}}
+    }
     added_entities = []
 
     def async_add_entities(entities):

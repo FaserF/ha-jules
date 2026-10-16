@@ -1,6 +1,7 @@
 """Tests for the JulesDataUpdateCoordinator."""
 
 from unittest.mock import AsyncMock, MagicMock
+
 import pytest
 from homeassistant.helpers.update_coordinator import UpdateFailed
 
@@ -57,7 +58,9 @@ async def test_coordinator_auto_approve(hass, mock_config_entry, mock_client):
 
 
 @pytest.mark.asyncio
-async def test_coordinator_state_transition_events(hass, mock_config_entry, mock_client):
+async def test_coordinator_state_transition_events(
+    hass, mock_config_entry, mock_client
+):
     hass.bus = MagicMock()
     hass.bus.async_fire = MagicMock()
 
@@ -73,7 +76,11 @@ async def test_coordinator_state_transition_events(hass, mock_config_entry, mock
 
     # Second update: transitioned to COMPLETED
     mock_client.async_get_sessions.return_value = [
-        {"name": "sessions/6", "state": "COMPLETED", "pullRequestUrl": "https://github.com/pull/1"}
+        {
+            "name": "sessions/6",
+            "state": "COMPLETED",
+            "pullRequestUrl": "https://github.com/pull/1",
+        }
     ]
     await coordinator._async_update_data()
 

@@ -100,7 +100,9 @@ class JulesClient:
                         )
                     if resp.status == 404:
                         error_text = await resp.text()
-                        raise SessionNotFoundError(f"Resource not found (404): {error_text}")
+                        raise SessionNotFoundError(
+                            f"Resource not found (404): {error_text}"
+                        )
                     if resp.status not in (200, 201, 204):
                         error_text = await resp.text()
                         raise JulesError(
@@ -130,7 +132,9 @@ class JulesClient:
 
         LOGGER.warning("Connection test failed across endpoints: %s", last_error)
         if last_error:
-            raise CannotConnect(f"Unable to connect to Jules endpoint: {last_error}") from last_error
+            raise CannotConnect(
+                f"Unable to connect to Jules endpoint: {last_error}"
+            ) from last_error
         return False
 
     async def async_get_sources(self) -> list[dict[str, Any]]:

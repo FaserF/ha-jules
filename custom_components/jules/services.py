@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from typing import Any
 
+import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
 from homeassistant.exceptions import HomeAssistantError
-import homeassistant.helpers.config_validation as cv
 
 from .client import JulesClient
 from .const import (
@@ -83,9 +83,7 @@ def _get_entry_context(
         CONF_DEFAULT_SOURCE: config_entry.options.get(
             CONF_DEFAULT_SOURCE, config_entry.data.get(CONF_DEFAULT_SOURCE, "")
         ),
-        CONF_DEFAULT_BRANCH: config_entry.options.get(
-            CONF_DEFAULT_BRANCH, "main"
-        ),
+        CONF_DEFAULT_BRANCH: config_entry.options.get(CONF_DEFAULT_BRANCH, "main"),
         CONF_AUTO_APPROVE: config_entry.options.get(
             CONF_AUTO_APPROVE, config_entry.data.get(CONF_AUTO_APPROVE, False)
         ),
@@ -139,7 +137,9 @@ async def async_setup_services(hass: HomeAssistant) -> None:
                     break
 
         if not session_id:
-            raise HomeAssistantError("No session ID specified and no session awaiting approval")
+            raise HomeAssistantError(
+                "No session ID specified and no session awaiting approval"
+            )
 
         LOGGER.info("Approving plan for session %s", session_id)
         result = await client.async_approve_plan(session_id)
