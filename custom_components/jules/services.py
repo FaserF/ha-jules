@@ -224,7 +224,12 @@ def _get_entry_context(
 
     target_entry_id = entry_id
     if not target_entry_id:
-        target_entry_id = next(iter(entries.keys()))
+        for eid, edata in entries.items():
+            if getattr(edata.get(DATA_CLIENT), "_is_omniroute", False):
+                target_entry_id = eid
+                break
+        if not target_entry_id:
+            target_entry_id = next(iter(entries.keys()))
 
     entry_data = entries.get(target_entry_id)
     if not entry_data:
