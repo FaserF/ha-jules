@@ -310,7 +310,29 @@ class JulesClient:
         """Fetch details for a specific session."""
         clean_id = session_id.split("/")[-1]
         if self._is_omniroute:
-            data = await self._async_request("GET", f"api/v1/agents/tasks/{clean_id}")
+            data = None
+            try:
+                data = await self._async_request(
+                    "GET", f"api/v1/agents/tasks/{clean_id}"
+                )
+            except Exception:
+                if not clean_id.startswith("jules_"):
+                    try:
+                        data = await self._async_request(
+                            "GET", f"api/v1/agents/tasks/jules_sessions_{clean_id}"
+                        )
+                    except Exception:
+                        pass
+            if not data or (isinstance(data, dict) and "error" in data):
+                sessions = await self.async_get_sessions(page_size=50)
+                for s in sessions:
+                    if (
+                        s.get("id") == clean_id
+                        or s.get("name") == session_id
+                        or s.get("raw_id") == clean_id
+                    ):
+                        return s
+                data = {}
             task = (
                 data.get("data") if isinstance(data, dict) and "data" in data else data
             )
