@@ -245,3 +245,43 @@ async def test_omniroute_create_and_actions(mock_session):
 
     msg = await client.async_send_message("sessions/8888", "Great job!")
     assert msg.get("success") is True
+
+
+@pytest.mark.asyncio
+async def test_client_chat_completion_and_health(mock_session):
+    client = JulesClient(
+        mock_session, api_key="test-key", api_url="http://100.64.0.1:20128"
+    )
+
+    # Test compression toggle
+    assert client.compression_enabled is True
+    client.compression_enabled = False
+    assert client.compression_enabled is False
+    headers = client._get_headers()
+    assert "x-omniroute-compression" not in headers
+    client.compression_enabled = True
+    assert client._get_headers()["x-omniroute-compression"] == "true"
+
+    # Test chat completion
+    mock_chat_resp = {
+        "choices": [{"message": {"role": "assistant", "content": "Jules AI response"}}]
+    }
+    mock_session.post = MagicMock(return_value=make_mock_response(200, mock_chat_resp))
+    res = await client.async_chat_completion(
+        messages=[{"role": "user", "content": "Hi"}],
+        model="coding-cascade",
+    )
+    assert res["choices"][0]["message"]["content"] == "Jules AI response"
+
+    # Test get models
+    mock_models_resp = {"data": [{"id": "coding-cascade"}, {"id": "meta-llama"}]}
+    mock_session.get = MagicMock(return_value=make_mock_response(200, mock_models_resp))
+    models = await client.async_get_models()
+    assert "coding-cascade" in models
+    assert "meta-llama" not in models
+
+    # Test health
+    mock_session.get = MagicMock(return_value=make_mock_response(200, {"status": "ok"}))
+    health = await client.async_check_health()
+    assert health["status"] == "ok"
+    assert health["reachable"] is True

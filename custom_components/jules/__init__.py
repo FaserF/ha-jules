@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -12,6 +13,7 @@ from .client import JulesClient
 from .const import (
     CONF_API_KEY,
     CONF_API_URL,
+    CONF_TOKEN_COMPRESSION,
     DATA_CLIENT,
     DATA_COORDINATOR,
     DEFAULT_API_URL,
@@ -24,6 +26,12 @@ from .coordinator import JulesDataUpdateCoordinator
 from .services import async_setup_services, async_unload_services
 
 
+async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
+    """Set up Google Jules integration services."""
+    hass.data.setdefault(DOMAIN, {})
+    return True
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Google Jules from a config entry."""
     hass.data.setdefault(DOMAIN, {})
@@ -33,6 +41,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     session = async_get_clientsession(hass)
     client = JulesClient(session=session, api_key=api_key, api_url=api_url)
+    client.compression_enabled = entry.options.get(
+        CONF_TOKEN_COMPRESSION,
+        entry.data.get(CONF_TOKEN_COMPRESSION, True),
+    )
 
     scan_interval_sec = entry.options.get("scan_interval", DEFAULT_SCAN_INTERVAL)
     coordinator = JulesDataUpdateCoordinator(

@@ -26,14 +26,24 @@ from homeassistant.helpers.selector import (
 
 from .client import CannotConnect, InvalidAuth, JulesClient
 from .const import (
+    CONF_AI_TASK_MODEL,
     CONF_API_KEY,
     CONF_API_URL,
     CONF_AUTO_APPROVE,
+    CONF_CHAT_MODEL,
     CONF_DEFAULT_BRANCH,
     CONF_DEFAULT_SOURCE,
+    CONF_MAX_TOKENS,
+    CONF_PROMPT,
+    CONF_TEMPERATURE,
+    DEFAULT_AI_TASK_MODEL,
     DEFAULT_API_URL,
+    DEFAULT_CHAT_MODEL,
+    DEFAULT_MAX_TOKENS,
     DEFAULT_NAME,
+    DEFAULT_PROMPT,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_TEMPERATURE,
     DOMAIN,
     LOGGER,
 )
@@ -181,6 +191,57 @@ class JulesOptionsFlowHandler(OptionsFlow):
 
         schema = vol.Schema(
             {
+                vol.Optional(
+                    CONF_CHAT_MODEL,
+                    default=self.config_entry.options.get(
+                        CONF_CHAT_MODEL,
+                        self.config_entry.data.get(CONF_CHAT_MODEL, DEFAULT_CHAT_MODEL),
+                    ),
+                ): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
+                vol.Optional(
+                    CONF_AI_TASK_MODEL,
+                    default=self.config_entry.options.get(
+                        CONF_AI_TASK_MODEL,
+                        self.config_entry.data.get(
+                            CONF_AI_TASK_MODEL, DEFAULT_AI_TASK_MODEL
+                        ),
+                    ),
+                ): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
+                vol.Optional(
+                    CONF_PROMPT,
+                    default=self.config_entry.options.get(
+                        CONF_PROMPT,
+                        self.config_entry.data.get(CONF_PROMPT, DEFAULT_PROMPT),
+                    ),
+                ): TextSelector(
+                    TextSelectorConfig(type=TextSelectorType.TEXT, multiline=True)
+                ),
+                vol.Optional(
+                    CONF_TEMPERATURE,
+                    default=self.config_entry.options.get(
+                        CONF_TEMPERATURE, DEFAULT_TEMPERATURE
+                    ),
+                ): NumberSelector(
+                    NumberSelectorConfig(
+                        min=0.0,
+                        max=1.0,
+                        step=0.1,
+                        mode=NumberSelectorMode.SLIDER,
+                    )
+                ),
+                vol.Optional(
+                    CONF_MAX_TOKENS,
+                    default=self.config_entry.options.get(
+                        CONF_MAX_TOKENS, DEFAULT_MAX_TOKENS
+                    ),
+                ): NumberSelector(
+                    NumberSelectorConfig(
+                        min=100,
+                        max=8192,
+                        step=100,
+                        mode=NumberSelectorMode.BOX,
+                    )
+                ),
                 vol.Optional(
                     "scan_interval",
                     default=self.config_entry.options.get(

@@ -53,6 +53,8 @@ class JulesDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         try:
             sessions = await self.client.async_get_sessions(page_size=50)
             sources = await self.client.async_get_sources()
+            health = await self.client.async_check_health()
+            models = await self.client.async_get_models()
         except Exception as err:
             LOGGER.error("Error communicating with Jules API: %s", err)
             raise UpdateFailed(f"Error fetching Jules data: {err}") from err
@@ -126,4 +128,8 @@ class JulesDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "sources": sources,
             "sources_count": len(sources),
             "sessions": sessions,
+            "health": health,
+            "latency_ms": health.get("latency_ms"),
+            "reachable": health.get("reachable", True),
+            "models": models,
         }

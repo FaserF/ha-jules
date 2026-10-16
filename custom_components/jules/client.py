@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from typing import Any
 
 import aiohttp
@@ -31,6 +32,10 @@ class SourceNotFoundError(JulesError):
     """Exception indicating requested source does not exist."""
 
 
+class ModelNotFoundError(JulesError):
+    """Exception indicating requested model or endpoint does not exist."""
+
+
 class JulesClient:
     """Async API Client for interacting with Google Jules and proxy gateways."""
 
@@ -45,6 +50,7 @@ class JulesClient:
         self._session = session
         self._api_key = api_key.strip() if api_key else ""
         self._timeout = timeout
+        self._compression_enabled: bool = True
 
         clean_url = api_url.rstrip("/")
         if clean_url.endswith("/api/v1/agents/tasks"):
@@ -59,6 +65,16 @@ class JulesClient:
         self._discovered_sources: set[str] = set()
 
     @property
+    def compression_enabled(self) -> bool:
+        """Return whether prompt token compression is enabled."""
+        return self._compression_enabled
+
+    @compression_enabled.setter
+    def compression_enabled(self, val: bool) -> None:
+        """Set token compression state."""
+        self._compression_enabled = bool(val)
+
+    @property
     def base_url(self) -> str:
         """Return configured base URL."""
         return self._base_url
@@ -69,17 +85,19 @@ class JulesClient:
         return self._is_omniroute
 
     def _get_headers(self) -> dict[str, str]:
-        """Construct request headers with Google API and standard Bearer support."""
+        """Construct request headers with Google API, compression, and standard Bearer support."""
         headers = {
             "Content-Type": "application/json",
             "Accept": "application/json",
-            "User-Agent": "HomeAssistant-Jules/2026.10.1",
+            "User-Agent": "HomeAssistant-Jules/2026.10.2",
         }
         if self._api_key:
             # Google Cloud endpoints use x-goog-api-key
             headers["x-goog-api-key"] = self._api_key
             # Also provide standard Authorization header for proxies / OmniRoute
             headers["Authorization"] = f"Bearer {self._api_key}"
+        if self._compression_enabled:
+            headers["x-omniroute-compression"] = "true"
         return headers
 
     def _resolve_url(self, path: str) -> str:
@@ -395,3 +413,128 @@ class JulesClient:
         except Exception as err:
             LOGGER.debug("Could not fetch activities for session %s: %s", clean_id, err)
             return []
+
+    async def async_get_models(self) -> list[str]:
+        """Fetch available models from OmniRoute or defaults."""
+        if self._is_omniroute:
+            url = f"{self._base_url}/v1/models"
+            headers = self._get_headers()
+            try:
+                async with asyncio.timeout(self._timeout):
+                    async with self._session.get(url, headers=headers) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            model_list = data.get("data", [])
+                            models = [
+                                m["id"]
+                                for m in model_list
+                                if isinstance(m, dict)
+                                and "id" in m
+                                and not m["id"].startswith("meta-")
+                            ]
+                            if models:
+                                return sorted(models)
+            except Exception as exc:
+                LOGGER.debug("Could not fetch models from OmniRoute: %s", exc)
+        return [
+            "coding-cascade",
+            "chat-cascade",
+            "fast-cascade",
+            "gemini-2.5-pro",
+            "gemini-2.5-flash",
+        ]
+
+    async def async_check_health(self) -> dict[str, Any]:
+        """Check Jules endpoint health and measure latency."""
+        headers = self._get_headers()
+        start = time.perf_counter()
+        if self._is_omniroute:
+            health_url = f"{self._base_url}/api/health"
+            try:
+                async with asyncio.timeout(10.0):
+                    async with self._session.get(health_url, headers=headers) as resp:
+                        latency_ms = round((time.perf_counter() - start) * 1000, 2)
+                        if resp.status == 200:
+                            try:
+                                data = await resp.json()
+                                if isinstance(data, dict):
+                                    data["latency_ms"] = latency_ms
+                                    data["reachable"] = True
+                                    return data
+                            except Exception:
+                                pass
+                            return {
+                                "status": "ok",
+                                "latency_ms": latency_ms,
+                                "reachable": True,
+                            }
+            except Exception as exc:
+                LOGGER.debug("OmniRoute /api/health unavailable: %s", exc)
+
+        start = time.perf_counter()
+        try:
+            await self.async_test_connection()
+            latency_ms = round((time.perf_counter() - start) * 1000, 2)
+            return {"status": "ok", "latency_ms": latency_ms, "reachable": True}
+        except Exception as err:
+            return {
+                "status": "offline",
+                "latency_ms": None,
+                "reachable": False,
+                "error": str(err),
+            }
+
+    async def async_chat_completion(
+        self,
+        messages: list[dict[str, Any]],
+        model: str = "coding-cascade",
+        temperature: float = 0.7,
+        top_p: float = 1.0,
+        max_tokens: int | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Send chat completion request to OmniRoute or Google Gemini endpoint."""
+        url = (
+            f"{self._base_url}/v1/chat/completions"
+            if self._is_omniroute
+            else f"{self._base_url}/chat/completions"
+        )
+        headers = self._get_headers()
+        payload: dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+            "top_p": top_p,
+        }
+        if max_tokens is not None:
+            payload["max_tokens"] = max_tokens
+        if tools:
+            payload["tools"] = tools
+        if tool_choice:
+            payload["tool_choice"] = tool_choice
+
+        try:
+            async with asyncio.timeout(self._timeout):
+                async with self._session.post(
+                    url, headers=headers, json=payload
+                ) as resp:
+                    if resp.status in (401, 403):
+                        raise InvalidAuth("Invalid authentication token")
+                    if resp.status == 404:
+                        raise ModelNotFoundError(
+                            f"Model or endpoint '{model}' not found: {await resp.text()}"
+                        )
+                    if resp.status != 200:
+                        raise JulesError(
+                            f"HTTP {resp.status} during chat completion: {await resp.text()}"
+                        )
+                    return await resp.json()
+        except (TimeoutError, aiohttp.ClientError) as err:
+            raise CannotConnect(
+                f"Connection error during chat completion: {err}"
+            ) from err
+        except (InvalidAuth, ModelNotFoundError, JulesError):
+            raise
+        except Exception as err:
+            raise JulesError(f"Unexpected chat completion error: {err}") from err

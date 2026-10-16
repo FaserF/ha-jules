@@ -35,8 +35,13 @@
     "step": {
       "init": {
         "title": "Google Jules Options",
-        "description": "Configure polling rates and default workflow behavior.",
+        "description": "Configure polling rates, AI models, conversation persona, and default workflow behavior.",
         "data": {
+          "chat_model": "Conversation Chat Model / Cascade",
+          "ai_task_model": "AI Task Model",
+          "prompt": "Conversation System Prompt",
+          "temperature": "Model Temperature",
+          "max_tokens": "Maximum Generation Tokens",
           "scan_interval": "Polling Interval (seconds)",
           "auto_approve": "Auto-Approve Proposed Plans",
           "default_source": "Default Repository",
@@ -86,6 +91,35 @@
       },
       "approve_latest_plan": {
         "name": "Approve Latest Plan"
+      }
+    },
+    "conversation": {
+      "assist": {
+        "name": "Assist"
+      }
+    },
+    "ai_task": {
+      "task_engine": {
+        "name": "Task Engine"
+      }
+    },
+    "switch": {
+      "auto_approve": {
+        "name": "Auto-Approve Plans"
+      },
+      "token_compression": {
+        "name": "Token Compression"
+      }
+    },
+    "select": {
+      "active_model": {
+        "name": "Active Model"
+      },
+      "active_repository": {
+        "name": "Active Repository"
+      },
+      "default_branch": {
+        "name": "Default Branch"
       }
     }
   },
@@ -159,6 +193,112 @@
         "entry_id": {
           "name": "Config Entry ID",
           "description": "Target config entry ID."
+        }
+      }
+    },
+    "execute_ai_task": {
+      "name": "Execute AI Task",
+      "description": "Execute arbitrary reasoning, code generation, or analysis through Jules and OmniRoute models.",
+      "fields": {
+        "prompt": {
+          "name": "Prompt",
+          "description": "Input prompt for reasoning or generation."
+        },
+        "model": {
+          "name": "Model / Cascade",
+          "description": "Target model or cascade."
+        },
+        "system_prompt": {
+          "name": "System Prompt",
+          "description": "Custom system instruction override."
+        },
+        "temperature": {
+          "name": "Temperature",
+          "description": "Sampling temperature (0.0 to 1.0)."
+        },
+        "max_tokens": {
+          "name": "Max Tokens",
+          "description": "Maximum generation tokens."
+        }
+      }
+    },
+    "analyze_automation": {
+      "name": "Analyze Automation",
+      "description": "Review a Home Assistant automation, diagnose bugs or race conditions, and recommend optimizations and fixed YAML.",
+      "fields": {
+        "automation_entity_id": {
+          "name": "Automation Entity",
+          "description": "Entity ID of an existing automation to inspect."
+        },
+        "automation_yaml": {
+          "name": "Raw Automation YAML",
+          "description": "Alternative raw YAML to analyze."
+        },
+        "custom_prompt": {
+          "name": "Custom Instructions",
+          "description": "Additional goals or constraints for the analysis."
+        },
+        "model": {
+          "name": "Model",
+          "description": "Target model for analysis."
+        }
+      }
+    },
+    "suggest_automations": {
+      "name": "Suggest Automations",
+      "description": "Scan connected smart home entities and generate tailored YAML automations.",
+      "fields": {
+        "domains": {
+          "name": "Target Domains",
+          "description": "List of entity domains to consider."
+        },
+        "entity_limit": {
+          "name": "Entity Limit",
+          "description": "Maximum number of devices to analyze."
+        },
+        "custom_prompt": {
+          "name": "Desired Focus",
+          "description": "Custom user preference or room focus."
+        },
+        "send_notification": {
+          "name": "Send Persistent Notification",
+          "description": "Post suggestions to notification drawer."
+        }
+      }
+    },
+    "diagnose_logs": {
+      "name": "Diagnose Error Logs",
+      "description": "Analyze Home Assistant error logs, diagnose root causes, and provide step-by-step fix recommendations.",
+      "fields": {
+        "log_text": {
+          "name": "Log Excerpt",
+          "description": "Optional raw error log snippet to diagnose."
+        },
+        "hours_back": {
+          "name": "Hours Back",
+          "description": "Hours of recent errors to analyze."
+        },
+        "custom_prompt": {
+          "name": "Custom Context",
+          "description": "Additional details about when the error occurred."
+        }
+      }
+    },
+    "analyze_camera": {
+      "name": "Analyze Camera",
+      "description": "Capture a live snapshot from a security camera and perform computer vision scene analysis.",
+      "fields": {
+        "camera_entity_id": {
+          "name": "Camera Entity",
+          "description": "Target camera to capture frame from."
+        },
+        "prompt": {
+          "name": "Vision Prompt",
+          "description": "Question or instruction for image inspection."
+        },
+        "model": {
+          "name": "Vision Model",
+          "description": "Target vision model."
         }
       }
     }

@@ -103,6 +103,26 @@ async def test_services_lifecycle(
     res_refresh = await registered_services[SERVICE_REFRESH_SESSIONS](call_refresh)
     assert res_refresh["status"] == "refreshed"
 
+    # Test execute_ai_task
+    mock_client.async_chat_completion = AsyncMock(
+        return_value={"choices": [{"message": {"content": "AI response"}}], "usage": {}}
+    )
+    call_ai = MagicMock()
+    call_ai.data = {"prompt": "Explain state machines"}
+    from custom_components.jules.const import (
+        SERVICE_ANALYZE_AUTOMATION,
+        SERVICE_EXECUTE_AI_TASK,
+    )
+
+    res_ai = await registered_services[SERVICE_EXECUTE_AI_TASK](call_ai)
+    assert res_ai["response"] == "AI response"
+
+    # Test analyze_automation
+    call_auto = MagicMock()
+    call_auto.data = {"automation_yaml": "trigger: - platform: state"}
+    res_auto = await registered_services[SERVICE_ANALYZE_AUTOMATION](call_auto)
+    assert res_auto["analysis"] == "AI response"
+
     # Test unload
     await async_unload_services(hass)
     assert len(registered_services) == 0
