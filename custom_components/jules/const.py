@@ -8,7 +8,7 @@ from typing import Final
 from homeassistant.const import Platform
 
 DOMAIN: Final = "jules"
-INTEGRATION_VERSION: Final = "2026.10.8"
+INTEGRATION_VERSION: Final = "2026.10.9"
 LOGGER: Final = logging.getLogger(__package__)
 
 DEFAULT_NAME: Final = "Google Jules"

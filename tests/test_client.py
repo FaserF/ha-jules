@@ -40,8 +40,16 @@ async def test_client_init_and_headers(mock_session):
 
     headers = client._get_headers()
     assert headers["x-goog-api-key"] == "secret-key"
-    assert headers["Authorization"] == "Bearer secret-key"
+    assert "Authorization" not in headers
     assert "HomeAssistant-Jules" in headers["User-Agent"]
+
+    proxy_client = JulesClient(
+        mock_session,
+        api_key="secret-key",
+        api_url="http://localhost:20128",
+    )
+    proxy_headers = proxy_client._get_headers()
+    assert proxy_headers["Authorization"] == "Bearer secret-key"
 
 
 @pytest.mark.asyncio

@@ -92,10 +92,13 @@ class JulesClient:
             "User-Agent": "HomeAssistant-Jules/2026.10.2",
         }
         if self._api_key:
-            # Google Cloud endpoints use x-goog-api-key
-            headers["x-goog-api-key"] = self._api_key
-            # Also provide standard Authorization header for proxies / OmniRoute
-            headers["Authorization"] = f"Bearer {self._api_key}"
+            if "googleapis.com" in self._base_url:
+                # Direct Google Cloud endpoints require x-goog-api-key without Bearer
+                headers["x-goog-api-key"] = self._api_key
+            else:
+                # Proxies / OmniRoute use standard Authorization header and x-goog-api-key
+                headers["Authorization"] = f"Bearer {self._api_key}"
+                headers["x-goog-api-key"] = self._api_key
         if self._compression_enabled:
             headers["x-omniroute-compression"] = "true"
         return headers
