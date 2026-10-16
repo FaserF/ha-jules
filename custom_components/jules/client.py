@@ -9,7 +9,7 @@ from typing import Any
 import aiohttp
 from homeassistant.exceptions import HomeAssistantError
 
-from .const import LOGGER
+from .const import LOGGER, STATUS_BUSY, STATUS_FAILED, STATUS_STABLE
 
 
 class JulesError(HomeAssistantError):
@@ -562,3 +562,373 @@ class JulesClient:
             raise
         except Exception as err:
             raise JulesError(f"Unexpected chat completion error: {err}") from err
+
+    async def async_get_session_state(self, session_id: str) -> dict[str, Any]:
+        """Get semantic operational status and dashboard state for a Jules session."""
+        clean_id = session_id.split("/")[-1]
+        session = await self.async_get_session(clean_id)
+        activities = await self.async_get_activities(clean_id)
+
+        status = _compute_semantic_status(session.get("state", ""))
+        pr_url = session.get("pullRequestUrl") or session.get("pr_url")
+        pr_info = {"url": pr_url, "title": session.get("title", "")} if pr_url else None
+
+        last_activity: dict[str, Any] | None = None
+        last_agent_message: dict[str, Any] | None = None
+        pending_plan: dict[str, Any] | None = None
+
+        if activities:
+            last_act = activities[-1]
+            act_type = (
+                last_act.get("activityType")
+                or ("planGenerated" if "planGenerated" in last_act else None)
+                or ("agentMessaged" if "agentMessaged" in last_act else None)
+                or ("userMessaged" if "userMessaged" in last_act else None)
+                or last_act.get("type")
+                or "unknown"
+            )
+            last_activity = {
+                "activityId": last_act.get("id")
+                or last_act.get("name", "").split("/")[-1],
+                "type": act_type,
+                "timestamp": last_act.get("createTime") or last_act.get("createdAt"),
+            }
+
+            for act in reversed(activities):
+                content = None
+                if isinstance(act.get("agentMessaged"), dict):
+                    content = act["agentMessaged"].get("agentMessage") or act[
+                        "agentMessaged"
+                    ].get("content")
+                elif isinstance(act.get("agentMessage"), dict):
+                    content = act["agentMessage"].get("content")
+                elif act.get("originator") == "agent" and act.get("content"):
+                    content = act["content"]
+                elif act.get("type") == "agentMessaged" and act.get("message"):
+                    content = act.get("message")
+
+                if content:
+                    last_agent_message = {
+                        "activityId": act.get("id")
+                        or act.get("name", "").split("/")[-1],
+                        "content": content,
+                        "timestamp": act.get("createTime") or act.get("createdAt"),
+                    }
+                    break
+
+            for act in reversed(activities):
+                plan_data = None
+                if isinstance(act.get("planGenerated"), dict):
+                    plan_data = act["planGenerated"].get("plan")
+                elif isinstance(act.get("plan"), dict):
+                    plan_data = act["plan"]
+
+                if plan_data and isinstance(plan_data, dict):
+                    steps_raw = plan_data.get("steps", [])
+                    steps = [
+                        {
+                            "title": step.get("title", f"Step {i + 1}"),
+                            "description": step.get("description", ""),
+                        }
+                        for i, step in enumerate(steps_raw)
+                        if isinstance(step, dict)
+                    ]
+                    pending_plan = {
+                        "activityId": act.get("id")
+                        or act.get("name", "").split("/")[-1],
+                        "planId": plan_data.get("id") or plan_data.get("planId", ""),
+                        "steps": steps,
+                    }
+                    break
+
+        return {
+            "id": clean_id,
+            "status": status,
+            "state": session.get("state"),
+            "url": f"https://jules.google.com/task/{clean_id}",
+            "title": session.get("title", ""),
+            "prompt": session.get("prompt", ""),
+            "pr": pr_info,
+            "lastActivity": last_activity,
+            "lastAgentMessage": last_agent_message,
+            "pendingPlan": pending_plan,
+        }
+
+    async def async_get_bash_outputs(
+        self,
+        session_id: str,
+        activity_ids: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Get all bash command outputs from a Jules session matching @google/jules-mcp."""
+        clean_id = session_id.split("/")[-1]
+        activities = await self.async_get_activities(clean_id)
+        target_ids = set(activity_ids) if activity_ids else None
+
+        outputs: list[dict[str, Any]] = []
+        summary = {"totalCommands": 0, "succeeded": 0, "failed": 0}
+
+        for act in activities:
+            act_id = str(act.get("id") or act.get("name", "").split("/")[-1])
+            if target_ids and act_id not in target_ids:
+                continue
+
+            artifacts = act.get("artifacts", [])
+            for artifact in artifacts:
+                if not isinstance(artifact, dict):
+                    continue
+                bash_data = (
+                    artifact.get("bashOutput")
+                    if "bashOutput" in artifact
+                    else (
+                        artifact
+                        if artifact.get("type") in ("bashOutput", "bash_output")
+                        or "command" in artifact
+                        else None
+                    )
+                )
+                if bash_data and isinstance(bash_data, dict):
+                    exit_code = bash_data.get("exitCode")
+                    outputs.append(
+                        {
+                            "command": bash_data.get("command", ""),
+                            "stdout": bash_data.get("stdout", ""),
+                            "stderr": bash_data.get("stderr", ""),
+                            "exitCode": exit_code,
+                            "activityId": act_id,
+                        }
+                    )
+                    summary["totalCommands"] += 1
+                    if exit_code in (0, None):
+                        summary["succeeded"] += 1
+                    else:
+                        summary["failed"] += 1
+
+        return {
+            "sessionId": clean_id,
+            "outputs": outputs,
+            "summary": summary,
+        }
+
+    async def async_show_code_diff(
+        self,
+        session_id: str,
+        file: str | None = None,
+        activity_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Show unified git code diff from a Jules session matching @google/jules-mcp."""
+        clean_id = session_id.split("/")[-1]
+        activities = await self.async_get_activities(clean_id)
+
+        unidiff_patch = ""
+        files: list[dict[str, Any]] = []
+
+        for act in reversed(activities):
+            act_id = str(act.get("id") or act.get("name", "").split("/")[-1])
+            if activity_id and act_id != activity_id:
+                continue
+
+            artifacts = act.get("artifacts", [])
+            for artifact in artifacts:
+                if not isinstance(artifact, dict):
+                    continue
+                change_set = artifact.get("changeSet") or (
+                    artifact
+                    if artifact.get("type") in ("changeSet", "change_set")
+                    or "gitPatch" in artifact
+                    else None
+                )
+                if change_set and isinstance(change_set, dict):
+                    git_patch = change_set.get("gitPatch", {})
+                    patch = git_patch.get("unidiffPatch") or change_set.get(
+                        "unidiffPatch", ""
+                    )
+                    if patch and not unidiff_patch:
+                        unidiff_patch = patch
+
+                    raw_files = change_set.get("files", [])
+                    if raw_files and not files:
+                        files = [
+                            {
+                                "path": f.get("path", ""),
+                                "changeType": f.get("changeType", "modified"),
+                                "additions": f.get("additions", 0),
+                                "deletions": f.get("deletions", 0),
+                            }
+                            for f in raw_files
+                            if isinstance(f, dict)
+                        ]
+            if unidiff_patch:
+                break
+
+        if file and unidiff_patch:
+            unidiff_patch = _extract_file_diff(unidiff_patch, file)
+            if files:
+                files = [f for f in files if f.get("path") == file]
+
+        summary = {
+            "totalFiles": len(files),
+            "created": len([f for f in files if f.get("changeType") == "created"]),
+            "modified": len([f for f in files if f.get("changeType") == "modified"]),
+            "deleted": len([f for f in files if f.get("changeType") == "deleted"]),
+        }
+
+        return {
+            "sessionId": clean_id,
+            "activityId": activity_id,
+            "file": file,
+            "unidiffPatch": unidiff_patch,
+            "files": files,
+            "summary": summary,
+        }
+
+    async def async_get_code_review_context(
+        self,
+        session_id: str,
+        format: str = "markdown",
+        filter_type: str = "all",
+        detail: str = "standard",
+        activity_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Get code review summary with file changes and insights matching @google/jules-mcp."""
+        clean_id = session_id.split("/")[-1]
+        session = await self.async_get_session(clean_id)
+        diff_res = await self.async_show_code_diff(clean_id, activity_id=activity_id)
+        bash_res = await self.async_get_bash_outputs(clean_id)
+
+        status = _compute_semantic_status(session.get("state", ""))
+        files = diff_res.get("files", [])
+        if filter_type != "all":
+            files = [f for f in files if f.get("changeType") == filter_type]
+
+        summary = diff_res.get("summary", {})
+        pr_url = session.get("pullRequestUrl") or session.get("pr_url")
+        pr_dict = {"url": pr_url, "title": session.get("title", "")} if pr_url else None
+
+        insights = {
+            "failedCommandCount": bash_res.get("summary", {}).get("failed", 0),
+            "totalCommands": bash_res.get("summary", {}).get("totalCommands", 0),
+        }
+
+        lines = [
+            f"# Jules Session Review: {session.get('title', clean_id)}",
+            f"- **Session ID**: `{clean_id}`",
+            f"- **Status**: `{status}` (State: {session.get('state')})",
+            f"- **Repository**: {session.get('source') or 'N/A'}",
+        ]
+        if pr_url:
+            lines.append(f"- **Pull Request**: [{pr_url}]({pr_url})")
+        lines.append(
+            f"\n### File Changes Summary ({summary.get('totalFiles', 0)} files)"
+        )
+        lines.append(
+            f"- Created: {summary.get('created', 0)} | Modified: {summary.get('modified', 0)} | Deleted: {summary.get('deleted', 0)}"
+        )
+
+        if files:
+            lines.append("\n| Path | Type | +Add | -Del |")
+            lines.append("|---|---|---|---|")
+            for f in files:
+                lines.append(
+                    f"| `{f['path']}` | {f['changeType']} | +{f.get('additions', 0)} | -{f.get('deletions', 0)} |"
+                )
+        else:
+            lines.append("\n*No file changes recorded in changeset yet.*")
+
+        formatted = "\n".join(lines)
+        return {
+            "sessionId": clean_id,
+            "title": session.get("title", ""),
+            "state": session.get("state", ""),
+            "status": status,
+            "url": f"https://jules.google.com/task/{clean_id}",
+            "pr": pr_dict,
+            "files": files,
+            "summary": summary,
+            "insights": insights,
+            "formatted": formatted,
+        }
+
+    async def async_send_reply(
+        self,
+        session_id: str,
+        action: str = "send",
+        message: str | None = None,
+        plan_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Interacts with an active Jules session (approving plans or sending messages) matching @google/jules-mcp."""
+        clean_id = session_id.split("/")[-1]
+        action_clean = action.lower()
+        if action_clean == "approve":
+            res = await self.async_approve_plan(clean_id)
+            return {
+                "success": True,
+                "message": f"Approved plan for session {clean_id}",
+                "reply": None,
+                "raw": res,
+            }
+
+        if not message:
+            raise JulesError("Message is required for action 'send' or 'ask'")
+
+        send_res = await self.async_send_message(clean_id, message)
+        if action_clean == "ask":
+            reply = None
+            start = time.perf_counter()
+            for _ in range(10):
+                await asyncio.sleep(2.0)
+                state = await self.async_get_session_state(clean_id)
+                msg_info = state.get("lastAgentMessage")
+                if msg_info and msg_info.get("content"):
+                    reply = msg_info["content"]
+                    break
+                if time.perf_counter() - start > 25:
+                    break
+            return {
+                "success": True,
+                "message": f"Message sent to session {clean_id}",
+                "reply": reply,
+                "raw": send_res,
+            }
+
+        return {
+            "success": True,
+            "message": f"Message sent to session {clean_id}",
+            "reply": None,
+            "raw": send_res,
+        }
+
+
+def _compute_semantic_status(state: str) -> str:
+    """Map raw session state to @google/jules-mcp semantic status."""
+    st = (state or "").lower().replace("-", "_").replace(" ", "_")
+    if st in ("queued", "planning", "in_progress", "inprogress", "running", "busy"):
+        return STATUS_BUSY
+    if st in (
+        "awaiting_approval",
+        "awaiting_plan_approval",
+        "awaitingplanapproval",
+        "awaiting_user_feedback",
+        "awaitinguserfeedback",
+        "paused",
+        "completed",
+        "stable",
+    ):
+        return STATUS_STABLE
+    if st in ("failed", "cancelled", "error"):
+        return STATUS_FAILED
+    return STATUS_STABLE
+
+
+def _extract_file_diff(patch: str, target_file: str) -> str:
+    """Extract diff hunks for a specific file from unified diff string."""
+    if not patch:
+        return ""
+    chunks = patch.split("diff --git ")
+    matched: list[str] = []
+    for chunk in chunks:
+        if not chunk.strip():
+            continue
+        first_line = chunk.splitlines()[0]
+        if f"a/{target_file}" in first_line or f"b/{target_file}" in first_line:
+            matched.append(f"diff --git {chunk}")
+    return "\n".join(matched)

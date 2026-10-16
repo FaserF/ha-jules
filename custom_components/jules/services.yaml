@@ -281,3 +281,198 @@ analyze_camera:
       required: false
       selector:
         text: {}
+
+list_sessions:
+  name: List Sessions
+  description: List recent Jules coding sessions with status, prompt, and PR details matching @google/jules-mcp.
+  fields:
+    page_size:
+      name: Page Size
+      description: Maximum number of recent sessions to retrieve.
+      default: 10
+      required: false
+      selector:
+        number:
+          min: 1
+          max: 50
+    entry_id:
+      name: Config Entry ID
+      description: Optional entry ID if multiple Jules accounts are configured.
+      required: false
+      selector:
+        text: {}
+
+get_session_state:
+  name: Get Session State
+  description: Get the operational status ('busy', 'stable', 'failed') and state of a Jules session matching @google/jules-mcp.
+  fields:
+    session_id:
+      name: Session ID
+      description: Target session ID (defaults to the latest session).
+      example: "17714408721739868450"
+      required: false
+      selector:
+        text: {}
+    entry_id:
+      name: Config Entry ID
+      description: Optional entry ID if multiple Jules accounts are configured.
+      required: false
+      selector:
+        text: {}
+
+get_bash_outputs:
+  name: Get Bash Outputs
+  description: Retrieve commands executed by Jules in the container, including stdout, stderr, and exit codes matching @google/jules-mcp.
+  fields:
+    session_id:
+      name: Session ID
+      description: Target session ID (defaults to the latest session).
+      example: "17714408721739868450"
+      required: false
+      selector:
+        text: {}
+    activity_ids:
+      name: Activity IDs
+      description: Optional list of activity IDs to filter bash outputs.
+      required: false
+      selector:
+        object: {}
+    entry_id:
+      name: Config Entry ID
+      description: Optional entry ID if multiple Jules accounts are configured.
+      required: false
+      selector:
+        text: {}
+
+get_code_review_context:
+  name: Get Code Review Context
+  description: Review code changes and file additions/deletions from a Jules session matching @google/jules-mcp.
+  fields:
+    session_id:
+      name: Session ID
+      description: Target session ID (defaults to the latest session).
+      example: "17714408721739868450"
+      required: false
+      selector:
+        text: {}
+    format:
+      name: Format
+      description: Output format (markdown, summary, tree, detailed).
+      default: "markdown"
+      required: false
+      selector:
+        select:
+          options:
+            - "markdown"
+            - "summary"
+            - "tree"
+            - "detailed"
+    filter:
+      name: Change Filter
+      description: Filter by file change type (all, created, modified, deleted).
+      default: "all"
+      required: false
+      selector:
+        select:
+          options:
+            - "all"
+            - "created"
+            - "modified"
+            - "deleted"
+    detail:
+      name: Detail Level
+      description: Level of detail (minimal, standard, full).
+      default: "standard"
+      required: false
+      selector:
+        select:
+          options:
+            - "minimal"
+            - "standard"
+            - "full"
+    activity_id:
+      name: Activity ID
+      description: Optional activity ID to review changes from a single activity.
+      required: false
+      selector:
+        text: {}
+    entry_id:
+      name: Config Entry ID
+      description: Optional entry ID if multiple Jules accounts are configured.
+      required: false
+      selector:
+        text: {}
+
+show_code_diff:
+  name: Show Code Diff
+  description: Retrieve the unified git patch diff from a Jules session matching @google/jules-mcp.
+  fields:
+    session_id:
+      name: Session ID
+      description: Target session ID (defaults to the latest session).
+      example: "17714408721739868450"
+      required: false
+      selector:
+        text: {}
+    file:
+      name: File Path
+      description: Specific file path to extract diff for (leave empty for full diff).
+      example: "custom_components/jules/client.py"
+      required: false
+      selector:
+        text: {}
+    activity_id:
+      name: Activity ID
+      description: Optional activity ID to extract diff from.
+      required: false
+      selector:
+        text: {}
+    entry_id:
+      name: Config Entry ID
+      description: Optional entry ID if multiple Jules accounts are configured.
+      required: false
+      selector:
+        text: {}
+
+send_reply:
+  name: Send Reply to Session
+  description: Send a message or approve a plan in an active Jules session matching @google/jules-mcp.
+  fields:
+    session_id:
+      name: Session ID
+      description: Target session ID (defaults to the latest session).
+      example: "17714408721739868450"
+      required: false
+      selector:
+        text: {}
+    action:
+      name: Action
+      description: Action to perform ('send' for fire-and-forget, 'ask' to wait for reply, 'approve' to approve plan).
+      default: "send"
+      required: true
+      selector:
+        select:
+          options:
+            - "send"
+            - "ask"
+            - "approve"
+    message:
+      name: Message
+      description: Message content to send (required for 'send' and 'ask').
+      required: false
+      selector:
+        text:
+          multiline: true
+    plan_id:
+      name: Plan ID
+      description: Optional plan ID when approving a plan.
+      required: false
+      selector:
+        text: {}
+    entry_id:
+      name: Config Entry ID
+      description: Optional entry ID if multiple Jules accounts are configured.
+      required: false
+      selector:
+        text: {}
+

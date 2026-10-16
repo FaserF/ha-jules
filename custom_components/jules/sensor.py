@@ -117,6 +117,12 @@ def _extract_latest_session_attributes(
         return {}
     return {
         ATTR_SESSION_ID: session.get("name") or session.get("id"),
+        "status": session.get("status") or "stable",
+        "url": (
+            f"https://jules.google.com/task/{session.get('id')}"
+            if session.get("id")
+            else None
+        ),
         ATTR_TITLE: session.get("title"),
         ATTR_PROMPT: session.get("prompt"),
         ATTR_SOURCE: session.get("source"),

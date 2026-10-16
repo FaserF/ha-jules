@@ -301,6 +301,118 @@
           "description": "Target vision model."
         }
       }
+    },
+    "list_sessions": {
+      "name": "List Sessions",
+      "description": "List recent Google Jules coding sessions with status, activities, and metadata.",
+      "fields": {
+        "page_size": {
+          "name": "Page Size",
+          "description": "Maximum number of sessions to return."
+        },
+        "page_token": {
+          "name": "Page Token",
+          "description": "Token for pagination."
+        },
+        "filter": {
+          "name": "Filter Expression",
+          "description": "Optional filter expression."
+        },
+        "entry_id": {
+          "name": "Config Entry ID",
+          "description": "Target config entry ID."
+        }
+      }
+    },
+    "get_session_state": {
+      "name": "Get Session State",
+      "description": "Retrieve the comprehensive state and dashboard overview for a Jules session.",
+      "fields": {
+        "session_id": {
+          "name": "Session ID",
+          "description": "ID of the Jules session."
+        },
+        "entry_id": {
+          "name": "Config Entry ID",
+          "description": "Target config entry ID."
+        }
+      }
+    },
+    "get_bash_outputs": {
+      "name": "Get Bash Outputs",
+      "description": "Retrieve terminal commands, output logs, and execution summaries executed by Jules.",
+      "fields": {
+        "session_id": {
+          "name": "Session ID",
+          "description": "ID of the Jules session."
+        },
+        "entry_id": {
+          "name": "Config Entry ID",
+          "description": "Target config entry ID."
+        }
+      }
+    },
+    "get_code_review_context": {
+      "name": "Get Code Review Context",
+      "description": "Retrieve a structured code review summary including changed files, diff stats, and insights.",
+      "fields": {
+        "session_id": {
+          "name": "Session ID",
+          "description": "ID of the Jules session."
+        },
+        "entry_id": {
+          "name": "Config Entry ID",
+          "description": "Target config entry ID."
+        }
+      }
+    },
+    "show_code_diff": {
+      "name": "Show Code Diff",
+      "description": "Retrieve unified git diff patches produced during a Jules session, optionally filtered by file or activity.",
+      "fields": {
+        "session_id": {
+          "name": "Session ID",
+          "description": "ID of the Jules session."
+        },
+        "file": {
+          "name": "File Filter",
+          "description": "Optional file path to filter git diff patch."
+        },
+        "activity_id": {
+          "name": "Activity ID",
+          "description": "Optional activity ID to inspect patch for."
+        },
+        "entry_id": {
+          "name": "Config Entry ID",
+          "description": "Target config entry ID."
+        }
+      }
+    },
+    "send_reply": {
+      "name": "Send Reply",
+      "description": "Send a reply to an active Jules session to approve a plan, send feedback, or ask a question.",
+      "fields": {
+        "session_id": {
+          "name": "Session ID",
+          "description": "Target session ID."
+        },
+        "action": {
+          "name": "Action",
+          "description": "Action type: approve, send, or ask."
+        },
+        "message": {
+          "name": "Message",
+          "description": "Message or clarification text."
+        },
+        "plan_id": {
+          "name": "Plan ID",
+          "description": "Optional plan ID to approve."
+        },
+        "entry_id": {
+          "name": "Config Entry ID",
+          "description": "Target config entry ID."
+        }
+      }
     }
   }
 }

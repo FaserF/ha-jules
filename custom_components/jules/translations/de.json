@@ -301,6 +301,118 @@
           "description": "Zu verwendendes Vision-Modell."
         }
       }
+    },
+    "list_sessions": {
+      "name": "Sitzungen auflisten",
+      "description": "Listet aktuelle Google Jules Codierungs-Sitzungen mit Status und Metadaten auf.",
+      "fields": {
+        "page_size": {
+          "name": "Seitengröße",
+          "description": "Maximale Anzahl zurückzugebender Sitzungen."
+        },
+        "page_token": {
+          "name": "Seiten-Token",
+          "description": "Token für die Paginierung."
+        },
+        "filter": {
+          "name": "Filterausdruck",
+          "description": "Optionaler Filterausdruck."
+        },
+        "entry_id": {
+          "name": "Konfigurationseintrag-ID",
+          "description": "Ziel-Konfigurationseintrag-ID."
+        }
+      }
+    },
+    "get_session_state": {
+      "name": "Sitzungsstatus abrufen",
+      "description": "Ruft den vollständigen Status und Dashboard-Überblick für eine Jules-Sitzung ab.",
+      "fields": {
+        "session_id": {
+          "name": "Sitzungs-ID",
+          "description": "ID der Jules-Sitzung."
+        },
+        "entry_id": {
+          "name": "Konfigurationseintrag-ID",
+          "description": "Ziel-Konfigurationseintrag-ID."
+        }
+      }
+    },
+    "get_bash_outputs": {
+      "name": "Bash-Ausgaben abrufen",
+      "description": "Ruft von Jules ausgeführte Terminalbefehle, Ausgaben und Zusammenfassungen ab.",
+      "fields": {
+        "session_id": {
+          "name": "Sitzungs-ID",
+          "description": "ID der Jules-Sitzung."
+        },
+        "entry_id": {
+          "name": "Konfigurationseintrag-ID",
+          "description": "Ziel-Konfigurationseintrag-ID."
+        }
+      }
+    },
+    "get_code_review_context": {
+      "name": "Code-Review abrufen",
+      "description": "Ruft eine strukturierte Code-Review-Zusammenfassung inklusive geänderter Dateien und Diff-Statistiken ab.",
+      "fields": {
+        "session_id": {
+          "name": "Sitzungs-ID",
+          "description": "ID der Jules-Sitzung."
+        },
+        "entry_id": {
+          "name": "Konfigurationseintrag-ID",
+          "description": "Ziel-Konfigurationseintrag-ID."
+        }
+      }
+    },
+    "show_code_diff": {
+      "name": "Code-Diff anzeigen",
+      "description": "Ruft Unified Git-Diff-Patches einer Jules-Sitzung ab, optional gefiltert nach Datei oder Aktivität.",
+      "fields": {
+        "session_id": {
+          "name": "Sitzungs-ID",
+          "description": "ID der Jules-Sitzung."
+        },
+        "file": {
+          "name": "Dateifilter",
+          "description": "Optionaler Dateipfad zum Filtern des Git-Diffs."
+        },
+        "activity_id": {
+          "name": "Aktivitäts-ID",
+          "description": "Optionale Aktivitäts-ID zur Prüfung."
+        },
+        "entry_id": {
+          "name": "Konfigurationseintrag-ID",
+          "description": "Ziel-Konfigurationseintrag-ID."
+        }
+      }
+    },
+    "send_reply": {
+      "name": "Antwort senden",
+      "description": "Sendet eine Antwort an eine aktive Jules-Sitzung (Plan genehmigen, Feedback senden oder Frage stellen).",
+      "fields": {
+        "session_id": {
+          "name": "Sitzungs-ID",
+          "description": "Ziel-Sitzungs-ID."
+        },
+        "action": {
+          "name": "Aktion",
+          "description": "Aktionstyp: approve, send oder ask."
+        },
+        "message": {
+          "name": "Nachricht",
+          "description": "Nachricht oder Rückfragetext."
+        },
+        "plan_id": {
+          "name": "Plan-ID",
+          "description": "Optionale zu genehmigende Plan-ID."
+        },
+        "entry_id": {
+          "name": "Konfigurationseintrag-ID",
+          "description": "Ziel-Konfigurationseintrag-ID."
+        }
+      }
     }
   }
 }

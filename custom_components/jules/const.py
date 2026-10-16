@@ -8,7 +8,7 @@ from typing import Final
 from homeassistant.const import Platform
 
 DOMAIN: Final = "jules"
-INTEGRATION_VERSION: Final = "2026.10.3"
+INTEGRATION_VERSION: Final = "2026.10.4"
 LOGGER: Final = logging.getLogger(__package__)
 
 DEFAULT_NAME: Final = "Google Jules"
@@ -58,7 +58,9 @@ DEFAULT_TOKEN_COMPRESSION: Final = True
 DEFAULT_PROMPT: Final = (
     "You are Jules, Google Labs' autonomous AI coding and smart home automation specialist. "
     "You assist users with smart home control, analyzing Home Assistant automations, debugging configuration issues, "
-    "and dispatching autonomous coding sessions to GitHub repositories."
+    "and dispatching and managing autonomous coding sessions in GitHub repositories. "
+    "You can inspect session states, show code diffs, review file changes, approve generated plans, "
+    "and inspect bash terminal outputs executed by Jules."
 )
 DEFAULT_AI_TASK_PROMPT: Final = (
     "You are Jules AI Task Engine. You analyze smart home state, optimize automations, "
@@ -82,8 +84,14 @@ PLATFORMS: Final[list[Platform | str]] = [
     PLATFORM_AI_TASK,
 ]
 
-# Service names
+# Service names (Full parity with @google/jules-mcp + Smart Home AI)
 SERVICE_CREATE_SESSION: Final = "create_session"
+SERVICE_LIST_SESSIONS: Final = "list_sessions"
+SERVICE_GET_SESSION_STATE: Final = "get_session_state"
+SERVICE_GET_BASH_OUTPUTS: Final = "get_bash_outputs"
+SERVICE_GET_CODE_REVIEW: Final = "get_code_review_context"
+SERVICE_SHOW_CODE_DIFF: Final = "show_code_diff"
+SERVICE_SEND_REPLY: Final = "send_reply"
 SERVICE_APPROVE_PLAN: Final = "approve_plan"
 SERVICE_SEND_MESSAGE: Final = "send_message"
 SERVICE_REFRESH_SESSIONS: Final = "refresh_sessions"
@@ -92,6 +100,11 @@ SERVICE_ANALYZE_AUTOMATION: Final = "analyze_automation"
 SERVICE_SUGGEST_AUTOMATIONS: Final = "suggest_automations"
 SERVICE_DIAGNOSE_LOGS: Final = "diagnose_logs"
 SERVICE_ANALYZE_CAMERA: Final = "analyze_camera"
+
+# Semantic Status (matching @google/jules-mcp)
+STATUS_BUSY: Final = "busy"
+STATUS_STABLE: Final = "stable"
+STATUS_FAILED: Final = "failed"
 
 # Max tool calling iterations in conversation agent
 MAX_TOOL_ITERATIONS: Final = 10

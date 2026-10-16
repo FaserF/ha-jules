@@ -83,6 +83,21 @@ class JulesConversationEntity(
         """Return supported languages."""
         return ["*"]
 
+    def _get_target_session_id(self, fn_args: dict[str, Any]) -> str:
+        """Extract session ID from tool arguments or default to latest session."""
+        if fn_args.get("session_id"):
+            return str(fn_args["session_id"])
+        data = self.hass.data.get(DOMAIN, {}).get(self.entry.entry_id, {})
+        coordinator = data.get(DATA_COORDINATOR)
+        if coordinator and coordinator.data:
+            latest = coordinator.data.get("latest_session")
+            if latest:
+                return str(latest.get("name") or latest.get("id") or "")
+            sessions = coordinator.data.get("sessions", [])
+            if sessions:
+                return str(sessions[0].get("name") or sessions[0].get("id") or "")
+        return ""
+
     async def async_process(self, user_input: ConversationInput) -> ConversationResult:
         """Process a conversational input sentence."""
         options = self.entry.options
@@ -111,7 +126,6 @@ class JulesConversationEntity(
             llm_context = llm.LLMContext(
                 platform=DOMAIN,
                 context=user_input.context,
-                user_prompt=user_input.text,
                 language=user_input.language,
                 assistant="conversation",
                 device_id=user_input.device_id,
@@ -136,37 +150,170 @@ class JulesConversationEntity(
         except Exception as exc:  # noqa: BLE001
             LOGGER.debug("LLM tools could not be loaded: %s", exc)
 
-        # Custom tool for Jules coding session dispatch
-        tools.append(
-            {
-                "type": "function",
-                "function": {
-                    "name": "create_jules_coding_session",
-                    "description": "Dispatch an autonomous coding or refactoring session to Google Jules.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "prompt": {
-                                "type": "string",
-                                "description": "The coding or bugfix instruction for Jules",
+        # Full Jules MCP toolset
+        tools.extend(
+            [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "create_jules_coding_session",
+                        "description": "Dispatch an autonomous coding or refactoring session to Google Jules.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "prompt": {
+                                    "type": "string",
+                                    "description": "The coding or bugfix instruction for Jules",
+                                },
+                                "source": {
+                                    "type": "string",
+                                    "description": "Target repository (e.g. FaserF/ha-jules)",
+                                },
+                                "title": {
+                                    "type": "string",
+                                    "description": "Short title for the task",
+                                },
+                                "branch": {
+                                    "type": "string",
+                                    "description": "Target git branch (default: main)",
+                                },
                             },
-                            "source": {
-                                "type": "string",
-                                "description": "Target repository (e.g. FaserF/ha-jules)",
-                            },
-                            "title": {
-                                "type": "string",
-                                "description": "Short title for the task",
-                            },
-                            "branch": {
-                                "type": "string",
-                                "description": "Target git branch (default: main)",
-                            },
+                            "required": ["prompt"],
                         },
-                        "required": ["prompt"],
                     },
                 },
-            }
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "list_jules_sessions",
+                        "description": "List recent Jules coding sessions with status, prompt, and PR details.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "page_size": {
+                                    "type": "number",
+                                    "description": "Maximum sessions to retrieve (default: 10)",
+                                }
+                            },
+                        },
+                    },
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "get_jules_session_state",
+                        "description": "Get current status ('busy', 'stable', 'failed'), last activity, last agent message, and pending plan of a Jules session.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "session_id": {
+                                    "type": "string",
+                                    "description": "Target session ID (optional, defaults to latest)",
+                                }
+                            },
+                        },
+                    },
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "approve_jules_plan",
+                        "description": "Approve a generated execution plan for a Jules session awaiting approval.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "session_id": {
+                                    "type": "string",
+                                    "description": "Session ID to approve (optional, defaults to session awaiting approval)",
+                                }
+                            },
+                        },
+                    },
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "send_jules_reply",
+                        "description": "Send a message or follow-up feedback to an active Jules session.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "session_id": {
+                                    "type": "string",
+                                    "description": "Target session ID (optional, defaults to latest)",
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "description": "Feedback or prompt to send to Jules",
+                                },
+                                "action": {
+                                    "type": "string",
+                                    "enum": ["send", "ask", "approve"],
+                                    "description": "Action type ('send' fire-and-forget, 'ask' waits for answer, 'approve' approves plan)",
+                                },
+                            },
+                            "required": ["message"],
+                        },
+                    },
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "get_jules_code_review",
+                        "description": "Review file changes, additions/deletions, and insights from a Jules session.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "session_id": {
+                                    "type": "string",
+                                    "description": "Target session ID (optional, defaults to latest)",
+                                },
+                                "format": {
+                                    "type": "string",
+                                    "enum": ["markdown", "summary", "tree", "detailed"],
+                                    "description": "Output format",
+                                },
+                            },
+                        },
+                    },
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "get_jules_code_diff",
+                        "description": "Get unified git code diff patch from a Jules session or specific file.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "session_id": {
+                                    "type": "string",
+                                    "description": "Target session ID (optional, defaults to latest)",
+                                },
+                                "file": {
+                                    "type": "string",
+                                    "description": "Specific file path to show diff for",
+                                },
+                            },
+                        },
+                    },
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "get_jules_bash_outputs",
+                        "description": "Get bash shell commands executed by Jules in the cloud container, including stdout, stderr, and exit codes.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "session_id": {
+                                    "type": "string",
+                                    "description": "Target session ID (optional, defaults to latest)",
+                                }
+                            },
+                        },
+                    },
+                },
+            ]
         )
 
         conversation_id = user_input.conversation_id or uuid.uuid4().hex
@@ -239,6 +386,97 @@ class JulesConversationEntity(
                                 "title": task_res.get("title"),
                             }
                         )
+                    except Exception as exc:  # noqa: BLE001
+                        tool_content = json.dumps({"error": str(exc)})
+                elif fn_name == "list_jules_sessions":
+                    try:
+                        page_size = fn_args.get("page_size", 10)
+                        sessions = await self.client.async_get_sessions(
+                            page_size=page_size
+                        )
+                        tool_content = json.dumps(
+                            {"sessions": sessions, "count": len(sessions)}
+                        )
+                    except Exception as exc:  # noqa: BLE001
+                        tool_content = json.dumps({"error": str(exc)})
+                elif fn_name == "get_jules_session_state":
+                    try:
+                        s_id = self._get_target_session_id(fn_args)
+                        if not s_id:
+                            tool_content = json.dumps({"error": "No session ID found"})
+                        else:
+                            state_res = await self.client.async_get_session_state(s_id)
+                            tool_content = json.dumps(state_res)
+                    except Exception as exc:  # noqa: BLE001
+                        tool_content = json.dumps({"error": str(exc)})
+                elif fn_name == "approve_jules_plan":
+                    try:
+                        s_id = self._get_target_session_id(fn_args)
+                        if not s_id:
+                            tool_content = json.dumps(
+                                {"error": "No session ID found to approve"}
+                            )
+                        else:
+                            app_res = await self.client.async_approve_plan(s_id)
+                            tool_content = json.dumps(
+                                {
+                                    "status": "approved",
+                                    "session_id": s_id,
+                                    "result": app_res,
+                                }
+                            )
+                    except Exception as exc:  # noqa: BLE001
+                        tool_content = json.dumps({"error": str(exc)})
+                elif fn_name == "send_jules_reply":
+                    try:
+                        s_id = self._get_target_session_id(fn_args)
+                        if not s_id:
+                            tool_content = json.dumps({"error": "No session ID found"})
+                        else:
+                            rep_res = await self.client.async_send_reply(
+                                session_id=s_id,
+                                action=fn_args.get("action", "send"),
+                                message=fn_args.get("message", ""),
+                            )
+                            tool_content = json.dumps(rep_res)
+                    except Exception as exc:  # noqa: BLE001
+                        tool_content = json.dumps({"error": str(exc)})
+                elif fn_name == "get_jules_code_review":
+                    try:
+                        s_id = self._get_target_session_id(fn_args)
+                        if not s_id:
+                            tool_content = json.dumps({"error": "No session ID found"})
+                        else:
+                            rev_res = await self.client.async_get_code_review_context(
+                                session_id=s_id,
+                                format=fn_args.get("format", "markdown"),
+                            )
+                            tool_content = json.dumps(rev_res)
+                    except Exception as exc:  # noqa: BLE001
+                        tool_content = json.dumps({"error": str(exc)})
+                elif fn_name == "get_jules_code_diff":
+                    try:
+                        s_id = self._get_target_session_id(fn_args)
+                        if not s_id:
+                            tool_content = json.dumps({"error": "No session ID found"})
+                        else:
+                            diff_res = await self.client.async_show_code_diff(
+                                session_id=s_id,
+                                file=fn_args.get("file"),
+                            )
+                            tool_content = json.dumps(diff_res)
+                    except Exception as exc:  # noqa: BLE001
+                        tool_content = json.dumps({"error": str(exc)})
+                elif fn_name == "get_jules_bash_outputs":
+                    try:
+                        s_id = self._get_target_session_id(fn_args)
+                        if not s_id:
+                            tool_content = json.dumps({"error": "No session ID found"})
+                        else:
+                            bash_res = await self.client.async_get_bash_outputs(
+                                session_id=s_id
+                            )
+                            tool_content = json.dumps(bash_res)
                     except Exception as exc:  # noqa: BLE001
                         tool_content = json.dumps({"error": str(exc)})
                 elif llm_api:

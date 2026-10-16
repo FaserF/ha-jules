@@ -35,8 +35,14 @@ from .const import (
     SERVICE_CREATE_SESSION,
     SERVICE_DIAGNOSE_LOGS,
     SERVICE_EXECUTE_AI_TASK,
+    SERVICE_GET_BASH_OUTPUTS,
+    SERVICE_GET_CODE_REVIEW,
+    SERVICE_GET_SESSION_STATE,
+    SERVICE_LIST_SESSIONS,
     SERVICE_REFRESH_SESSIONS,
     SERVICE_SEND_MESSAGE,
+    SERVICE_SEND_REPLY,
+    SERVICE_SHOW_CODE_DIFF,
     SERVICE_SUGGEST_AUTOMATIONS,
     STATE_AWAITING_APPROVAL,
 )
@@ -64,6 +70,58 @@ SEND_MESSAGE_SCHEMA = vol.Schema(
     {
         vol.Required("message"): cv.string,
         vol.Optional("session_id"): cv.string,
+        vol.Optional("entry_id"): cv.string,
+    }
+)
+
+LIST_SESSIONS_SCHEMA = vol.Schema(
+    {
+        vol.Optional("page_size", default=10): vol.Coerce(int),
+        vol.Optional("entry_id"): cv.string,
+    }
+)
+
+GET_SESSION_STATE_SCHEMA = vol.Schema(
+    {
+        vol.Optional("session_id"): cv.string,
+        vol.Optional("entry_id"): cv.string,
+    }
+)
+
+GET_BASH_OUTPUTS_SCHEMA = vol.Schema(
+    {
+        vol.Optional("session_id"): cv.string,
+        vol.Optional("activity_ids"): vol.All(cv.ensure_list, [cv.string]),
+        vol.Optional("entry_id"): cv.string,
+    }
+)
+
+GET_CODE_REVIEW_SCHEMA = vol.Schema(
+    {
+        vol.Optional("session_id"): cv.string,
+        vol.Optional("format", default="markdown"): cv.string,
+        vol.Optional("filter", default="all"): cv.string,
+        vol.Optional("detail", default="standard"): cv.string,
+        vol.Optional("activity_id"): cv.string,
+        vol.Optional("entry_id"): cv.string,
+    }
+)
+
+SHOW_CODE_DIFF_SCHEMA = vol.Schema(
+    {
+        vol.Optional("session_id"): cv.string,
+        vol.Optional("file"): cv.string,
+        vol.Optional("activity_id"): cv.string,
+        vol.Optional("entry_id"): cv.string,
+    }
+)
+
+SEND_REPLY_SCHEMA = vol.Schema(
+    {
+        vol.Optional("session_id"): cv.string,
+        vol.Optional("action", default="send"): cv.string,
+        vol.Optional("message"): cv.string,
+        vol.Optional("plan_id"): cv.string,
         vol.Optional("entry_id"): cv.string,
     }
 )
@@ -240,6 +298,96 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         result = await client.async_send_message(session_id, message)
         await coordinator.async_request_refresh()
         return {"session_id": session_id, "result": result}
+
+    def _resolve_session_id(
+        coordinator: JulesDataUpdateCoordinator, raw_id: str | None
+    ) -> str:
+        """Resolve session ID from argument or latest known session."""
+        if raw_id:
+            return raw_id
+        latest = (coordinator.data or {}).get("latest_session")
+        if latest:
+            return str(latest.get("name") or latest.get("id") or "")
+        sessions = (coordinator.data or {}).get("sessions", [])
+        if sessions:
+            return str(sessions[0].get("name") or sessions[0].get("id") or "")
+        raise HomeAssistantError(
+            "No session ID specified and no active or recent session found"
+        )
+
+    async def handle_list_sessions(call: ServiceCall) -> ServiceResponse:
+        """Handle listing recent Jules sessions matching @google/jules-mcp."""
+        page_size = call.data.get("page_size", 10)
+        entry_id = call.data.get("entry_id")
+        client, _, _, _ = _get_entry_context(hass, entry_id)
+        sessions = await client.async_get_sessions(page_size=page_size)
+        return {"sessions": sessions, "count": len(sessions)}
+
+    async def handle_get_session_state(call: ServiceCall) -> ServiceResponse:
+        """Handle getting session operational dashboard status matching @google/jules-mcp."""
+        entry_id = call.data.get("entry_id")
+        client, coordinator, _, _ = _get_entry_context(hass, entry_id)
+        session_id = _resolve_session_id(coordinator, call.data.get("session_id"))
+        return await client.async_get_session_state(session_id)
+
+    async def handle_get_bash_outputs(call: ServiceCall) -> ServiceResponse:
+        """Handle getting bash terminal outputs from a Jules session matching @google/jules-mcp."""
+        entry_id = call.data.get("entry_id")
+        client, coordinator, _, _ = _get_entry_context(hass, entry_id)
+        session_id = _resolve_session_id(coordinator, call.data.get("session_id"))
+        activity_ids = call.data.get("activity_ids")
+        return await client.async_get_bash_outputs(
+            session_id, activity_ids=activity_ids
+        )
+
+    async def handle_get_code_review_context(
+        call: ServiceCall,
+    ) -> ServiceResponse:
+        """Handle reviewing code changes and file additions/deletions matching @google/jules-mcp."""
+        entry_id = call.data.get("entry_id")
+        client, coordinator, _, _ = _get_entry_context(hass, entry_id)
+        session_id = _resolve_session_id(coordinator, call.data.get("session_id"))
+        fmt = call.data.get("format", "markdown")
+        flt = call.data.get("filter", "all")
+        det = call.data.get("detail", "standard")
+        act_id = call.data.get("activity_id")
+        return await client.async_get_code_review_context(
+            session_id=session_id,
+            format=fmt,
+            filter_type=flt,
+            detail=det,
+            activity_id=act_id,
+        )
+
+    async def handle_show_code_diff(call: ServiceCall) -> ServiceResponse:
+        """Handle showing unified code diff patch matching @google/jules-mcp."""
+        entry_id = call.data.get("entry_id")
+        client, coordinator, _, _ = _get_entry_context(hass, entry_id)
+        session_id = _resolve_session_id(coordinator, call.data.get("session_id"))
+        target_file = call.data.get("file")
+        act_id = call.data.get("activity_id")
+        return await client.async_show_code_diff(
+            session_id=session_id,
+            file=target_file,
+            activity_id=act_id,
+        )
+
+    async def handle_send_reply(call: ServiceCall) -> ServiceResponse:
+        """Handle interacting with an active Jules session matching @google/jules-mcp."""
+        entry_id = call.data.get("entry_id")
+        client, coordinator, _, _ = _get_entry_context(hass, entry_id)
+        session_id = _resolve_session_id(coordinator, call.data.get("session_id"))
+        action = call.data.get("action", "send")
+        message = call.data.get("message")
+        plan_id = call.data.get("plan_id")
+        res = await client.async_send_reply(
+            session_id=session_id,
+            action=action,
+            message=message,
+            plan_id=plan_id,
+        )
+        await coordinator.async_request_refresh()
+        return res
 
     async def handle_refresh_sessions(call: ServiceCall) -> ServiceResponse:
         """Handle manual data refresh."""
@@ -547,6 +695,48 @@ async def async_setup_services(hass: HomeAssistant) -> None:
     )
     hass.services.async_register(
         DOMAIN,
+        SERVICE_LIST_SESSIONS,
+        handle_list_sessions,
+        schema=LIST_SESSIONS_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_GET_SESSION_STATE,
+        handle_get_session_state,
+        schema=GET_SESSION_STATE_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_GET_BASH_OUTPUTS,
+        handle_get_bash_outputs,
+        schema=GET_BASH_OUTPUTS_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_GET_CODE_REVIEW,
+        handle_get_code_review_context,
+        schema=GET_CODE_REVIEW_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SHOW_CODE_DIFF,
+        handle_show_code_diff,
+        schema=SHOW_CODE_DIFF_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SEND_REPLY,
+        handle_send_reply,
+        schema=SEND_REPLY_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(
+        DOMAIN,
         SERVICE_APPROVE_PLAN,
         handle_approve_plan,
         schema=APPROVE_PLAN_SCHEMA,
@@ -607,6 +797,12 @@ async def async_unload_services(hass: HomeAssistant) -> None:
     """Unload Google Jules services."""
     for service in (
         SERVICE_CREATE_SESSION,
+        SERVICE_LIST_SESSIONS,
+        SERVICE_GET_SESSION_STATE,
+        SERVICE_GET_BASH_OUTPUTS,
+        SERVICE_GET_CODE_REVIEW,
+        SERVICE_SHOW_CODE_DIFF,
+        SERVICE_SEND_REPLY,
         SERVICE_APPROVE_PLAN,
         SERVICE_SEND_MESSAGE,
         SERVICE_REFRESH_SESSIONS,
