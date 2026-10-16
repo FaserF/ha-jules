@@ -8,7 +8,7 @@ from typing import Final
 from homeassistant.const import Platform
 
 DOMAIN: Final = "jules"
-INTEGRATION_VERSION: Final = "2026.10.4"
+INTEGRATION_VERSION: Final = "2026.10.5"
 LOGGER: Final = logging.getLogger(__package__)
 
 DEFAULT_NAME: Final = "Google Jules"
@@ -71,6 +71,8 @@ DEFAULT_AI_TASK_PROMPT: Final = (
 DATA_COORDINATOR: Final = "coordinator"
 DATA_CLIENT: Final = "client"
 DATA_AI_TASK_ENTITY: Final = "ai_task_entity"
+DATA_IMAGE_ENTITY: Final = "latest_image_entity"
+DATA_EVENT_ENTITY: Final = "session_event_entity"
 
 # Platforms
 PLATFORM_AI_TASK: Final = "ai_task"
@@ -81,6 +83,8 @@ PLATFORMS: Final[list[Platform | str]] = [
     Platform.CONVERSATION,
     Platform.SWITCH,
     Platform.SELECT,
+    Platform.EVENT,
+    Platform.IMAGE,
     PLATFORM_AI_TASK,
 ]
 
@@ -93,6 +97,7 @@ SERVICE_GET_CODE_REVIEW: Final = "get_code_review_context"
 SERVICE_SHOW_CODE_DIFF: Final = "show_code_diff"
 SERVICE_SEND_REPLY: Final = "send_reply"
 SERVICE_APPROVE_PLAN: Final = "approve_plan"
+SERVICE_CANCEL_SESSION: Final = "cancel_session"
 SERVICE_SEND_MESSAGE: Final = "send_message"
 SERVICE_REFRESH_SESSIONS: Final = "refresh_sessions"
 SERVICE_EXECUTE_AI_TASK: Final = "execute_ai_task"
@@ -114,6 +119,8 @@ STATE_UNSPECIFIED: Final = "UNSPECIFIED"
 STATE_QUEUED: Final = "QUEUED"
 STATE_PLANNING: Final = "PLANNING"
 STATE_AWAITING_APPROVAL: Final = "AWAITING_APPROVAL"
+STATE_AWAITING_PLAN_APPROVAL: Final = "AWAITING_PLAN_APPROVAL"
+STATE_AWAITING_USER_FEEDBACK: Final = "AWAITING_USER_FEEDBACK"
 STATE_IN_PROGRESS: Final = "IN_PROGRESS"
 STATE_COMPLETED: Final = "COMPLETED"
 STATE_FAILED: Final = "FAILED"
@@ -123,6 +130,8 @@ ACTIVE_STATES: Final[set[str]] = {
     STATE_QUEUED,
     STATE_PLANNING,
     STATE_AWAITING_APPROVAL,
+    STATE_AWAITING_PLAN_APPROVAL,
+    STATE_AWAITING_USER_FEEDBACK,
     STATE_IN_PROGRESS,
 }
 

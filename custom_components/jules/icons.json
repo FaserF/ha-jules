@@ -1,0 +1,125 @@
+{
+  "entity": {
+    "sensor": {
+      "total_sessions": {
+        "default": "mdi:counter"
+      },
+      "active_sessions": {
+        "default": "mdi:progress-clock"
+      },
+      "awaiting_approval": {
+        "default": "mdi:clock-alert-outline"
+      },
+      "completed_sessions": {
+        "default": "mdi:check-all"
+      },
+      "failed_sessions": {
+        "default": "mdi:alert-circle"
+      },
+      "sources_count": {
+        "default": "mdi:source-repository-multiple"
+      },
+      "latest_session": {
+        "default": "mdi:code-braces-box"
+      }
+    },
+    "binary_sensor": {
+      "connected": {
+        "default": "mdi:server-network"
+      },
+      "working": {
+        "default": "mdi:robot-industrial"
+      },
+      "action_required": {
+        "default": "mdi:alert-decagram"
+      }
+    },
+    "button": {
+      "refresh": {
+        "default": "mdi:refresh"
+      },
+      "approve_latest_plan": {
+        "default": "mdi:check-decagram"
+      }
+    },
+    "switch": {
+      "auto_approve": {
+        "default": "mdi:check-decagram-outline"
+      },
+      "token_compression": {
+        "default": "mdi:arrow-collapse-horizontal"
+      }
+    },
+    "select": {
+      "active_model": {
+        "default": "mdi:routes"
+      },
+      "active_repository": {
+        "default": "mdi:source-repository"
+      },
+      "default_branch": {
+        "default": "mdi:source-branch"
+      }
+    },
+    "image": {
+      "latest_analyzed_image": {
+        "default": "mdi:camera-iris"
+      }
+    },
+    "event": {
+      "session_event": {
+        "default": "mdi:bell-ring-outline"
+      }
+    }
+  },
+  "services": {
+    "create_session": {
+      "default": "mdi:play-circle-outline"
+    },
+    "cancel_session": {
+      "default": "mdi:stop-circle-outline"
+    },
+    "list_sessions": {
+      "default": "mdi:format-list-bulleted"
+    },
+    "get_session_state": {
+      "default": "mdi:view-dashboard-outline"
+    },
+    "get_bash_outputs": {
+      "default": "mdi:console-line"
+    },
+    "get_code_review_context": {
+      "default": "mdi:file-document-check-outline"
+    },
+    "show_code_diff": {
+      "default": "mdi:file-compare"
+    },
+    "send_reply": {
+      "default": "mdi:reply-outline"
+    },
+    "approve_plan": {
+      "default": "mdi:check-bold"
+    },
+    "send_message": {
+      "default": "mdi:send-outline"
+    },
+    "refresh_sessions": {
+      "default": "mdi:sync"
+    },
+    "execute_ai_task": {
+      "default": "mdi:brain"
+    },
+    "analyze_automation": {
+      "default": "mdi:robot-confused-outline"
+    },
+    "suggest_automations": {
+      "default": "mdi:lightbulb-auto-outline"
+    },
+    "diagnose_logs": {
+      "default": "mdi:file-find-outline"
+    },
+    "analyze_camera": {
+      "default": "mdi:camera-account"
+    }
+  }
+}

@@ -12,12 +12,12 @@ from homeassistant.components.binary_sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DATA_COORDINATOR, DEFAULT_NAME, DOMAIN
+from .const import DATA_COORDINATOR, DOMAIN
 from .coordinator import JulesDataUpdateCoordinator
+from .helpers import get_device_info
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -92,14 +92,7 @@ class JulesBinarySensorEntity(
         self._attr_unique_id = f"{entry.entry_id}_{description.key}"
         self._attr_has_entity_name = True
 
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            name=entry.title or DEFAULT_NAME,
-            manufacturer="Google",
-            model="Jules AI Coding Agent",
-            sw_version="2026.10.0",
-            configuration_url="https://jules.google",
-        )
+        self._attr_device_info = get_device_info(entry)
 
     @property
     def is_on(self) -> bool:

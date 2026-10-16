@@ -26,12 +26,14 @@ from .const import (
     DATA_AI_TASK_ENTITY,
     DATA_CLIENT,
     DATA_COORDINATOR,
+    DATA_IMAGE_ENTITY,
     DEFAULT_AI_TASK_MODEL,
     DOMAIN,
     LOGGER,
     SERVICE_ANALYZE_AUTOMATION,
     SERVICE_ANALYZE_CAMERA,
     SERVICE_APPROVE_PLAN,
+    SERVICE_CANCEL_SESSION,
     SERVICE_CREATE_SESSION,
     SERVICE_DIAGNOSE_LOGS,
     SERVICE_EXECUTE_AI_TASK,
@@ -60,6 +62,13 @@ CREATE_SESSION_SCHEMA = vol.Schema(
 )
 
 APPROVE_PLAN_SCHEMA = vol.Schema(
+    {
+        vol.Optional("session_id"): cv.string,
+        vol.Optional("entry_id"): cv.string,
+    }
+)
+
+CANCEL_SESSION_SCHEMA = vol.Schema(
     {
         vol.Optional("session_id"): cv.string,
         vol.Optional("entry_id"): cv.string,
@@ -278,6 +287,16 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         result = await client.async_approve_plan(session_id)
         await coordinator.async_request_refresh()
         return {"session_id": session_id, "result": result}
+
+    async def handle_cancel_session(call: ServiceCall) -> ServiceResponse:
+        """Handle cancelling or stopping an active Jules coding session."""
+        entry_id = call.data.get("entry_id")
+        client, coordinator, _, _ = _get_entry_context(hass, entry_id)
+        session_id = _resolve_session_id(coordinator, call.data.get("session_id"))
+        LOGGER.info("Cancelling Jules session %s", session_id)
+        result = await client.async_cancel_session(session_id)
+        await coordinator.async_request_refresh()
+        return {"session_id": session_id, "status": "cancelled", "result": result}
 
     async def handle_send_message(call: ServiceCall) -> ServiceResponse:
         """Handle sending feedback/message to a session."""
@@ -680,6 +699,21 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         )
         choices = resp.get("choices", [])
         analysis = choices[0].get("message", {}).get("content", "") if choices else ""
+
+        # Update latest analyzed image entity in HA if present
+        target_entry_id = entry_id or next(iter(hass.data.get(DOMAIN, {})), None)
+        if target_entry_id and target_entry_id in hass.data.get(DOMAIN, {}):
+            entry_dict = hass.data[DOMAIN][target_entry_id]
+            if DATA_IMAGE_ENTITY in entry_dict:
+                img_entity = entry_dict[DATA_IMAGE_ENTITY]
+                if hasattr(img_entity, "set_image"):
+                    img_entity.set_image(
+                        image_data=image_frame.content,
+                        analysis_text=analysis,
+                        camera_entity_id=camera_entity_id,
+                        prompt=prompt,
+                    )
+
         return {
             "camera_entity_id": camera_entity_id,
             "analysis": analysis,
@@ -691,6 +725,13 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         SERVICE_CREATE_SESSION,
         handle_create_session,
         schema=CREATE_SESSION_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_CANCEL_SESSION,
+        handle_cancel_session,
+        schema=CANCEL_SESSION_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
     hass.services.async_register(
@@ -797,6 +838,7 @@ async def async_unload_services(hass: HomeAssistant) -> None:
     """Unload Google Jules services."""
     for service in (
         SERVICE_CREATE_SESSION,
+        SERVICE_CANCEL_SESSION,
         SERVICE_LIST_SESSIONS,
         SERVICE_GET_SESSION_STATE,
         SERVICE_GET_BASH_OUTPUTS,

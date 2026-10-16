@@ -64,6 +64,24 @@ approve_plan:
       selector:
         text: {}
 
+cancel_session:
+  name: Cancel Session
+  description: Cancel or stop an active or stuck Jules coding session.
+  fields:
+    session_id:
+      name: Session ID
+      description: ID of the session to cancel (defaults to the most recent active session).
+      example: "sessions/12345678"
+      required: false
+      selector:
+        text: {}
+    entry_id:
+      name: Config Entry ID
+      description: Optional entry ID if multiple Jules accounts are configured.
+      required: false
+      selector:
+        text: {}
+
 send_message:
   name: Send Message
   description: Send guidance, follow-up instructions, or feedback to a running session.

@@ -9,7 +9,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .client import JulesClient
+from .client import CannotConnect, InvalidAuth, JulesClient
 from .const import (
     ACTIVE_STATES,
     CONF_AUTO_APPROVE,
@@ -17,8 +17,16 @@ from .const import (
     DOMAIN,
     LOGGER,
     STATE_AWAITING_APPROVAL,
+    STATE_AWAITING_PLAN_APPROVAL,
+    STATE_AWAITING_USER_FEEDBACK,
     STATE_COMPLETED,
     STATE_FAILED,
+)
+from .repairs import (
+    async_create_auth_repair,
+    async_create_connection_repair,
+    async_delete_auth_repair,
+    async_delete_connection_repair,
 )
 
 
@@ -47,6 +55,14 @@ class JulesDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.client = client
         self.config_entry = entry
         self._previous_states: dict[str, str] = {}
+        self.event_entity: Any = None
+
+    def _fire_event_entity(self, event_type: str, data: dict[str, Any]) -> None:
+        """Forward lifecycle event to EventEntity if registered."""
+        if self.event_entity is not None and hasattr(
+            self.event_entity, "trigger_session_event"
+        ):
+            self.event_entity.trigger_session_event(event_type, data)
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from Jules API."""
@@ -55,6 +71,16 @@ class JulesDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             sources = await self.client.async_get_sources()
             health = await self.client.async_check_health()
             models = await self.client.async_get_models()
+            async_delete_auth_repair(self.hass, self.config_entry)
+            async_delete_connection_repair(self.hass, self.config_entry)
+        except InvalidAuth as err:
+            LOGGER.error("Authentication failed for Jules API: %s", err)
+            async_create_auth_repair(self.hass, self.config_entry)
+            raise UpdateFailed(f"Invalid authentication for Jules: {err}") from err
+        except CannotConnect as err:
+            LOGGER.error("Connection failed for Jules API: %s", err)
+            async_create_connection_repair(self.hass, self.config_entry, str(err))
+            raise UpdateFailed(f"Cannot connect to Jules: {err}") from err
         except Exception as err:
             LOGGER.error("Error communicating with Jules API: %s", err)
             raise UpdateFailed(f"Error fetching Jules data: {err}") from err
@@ -82,7 +108,11 @@ class JulesDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if state in ACTIVE_STATES:
                 active_sessions += 1
 
-            if state == STATE_AWAITING_APPROVAL:
+            if state in (
+                STATE_AWAITING_APPROVAL,
+                STATE_AWAITING_PLAN_APPROVAL,
+                STATE_AWAITING_USER_FEEDBACK,
+            ):
                 awaiting_approval += 1
                 # Check for auto-approval if configured
                 if auto_approve_enabled and s_id:
@@ -110,10 +140,26 @@ class JulesDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 }
                 if state == STATE_COMPLETED:
                     self.hass.bus.async_fire("jules_session_completed", event_data)
+                    self._fire_event_entity("session_completed", event_data)
                 elif state == STATE_FAILED:
                     self.hass.bus.async_fire("jules_session_failed", event_data)
-                elif state == STATE_AWAITING_APPROVAL:
+                    self._fire_event_entity("session_failed", event_data)
+                elif state in (
+                    STATE_AWAITING_APPROVAL,
+                    STATE_AWAITING_PLAN_APPROVAL,
+                    STATE_AWAITING_USER_FEEDBACK,
+                ):
                     self.hass.bus.async_fire("jules_plan_awaiting_approval", event_data)
+                    self._fire_event_entity("plan_awaiting_approval", event_data)
+            elif prev_state is None and state in ACTIVE_STATES and s_id:
+                event_data = {
+                    "session_id": s_id,
+                    "new_state": state,
+                    "title": s.get("title"),
+                    "source": s.get("source"),
+                }
+                self.hass.bus.async_fire("jules_session_started", event_data)
+                self._fire_event_entity("session_started", event_data)
 
             if s_id:
                 self._previous_states[s_id] = state

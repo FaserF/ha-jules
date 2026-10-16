@@ -121,6 +121,27 @@
       "default_branch": {
         "name": "Standard-Branch"
       }
+    },
+    "image": {
+      "latest_analyzed_image": {
+        "name": "Zuletzt analysiertes Bild"
+      }
+    },
+    "event": {
+      "session_event": {
+        "name": "Sitzungs-Ereignis",
+        "state_attributes": {
+          "event_type": {
+            "name": "Ereignistyp",
+            "state": {
+              "session_started": "Sitzung gestartet",
+              "plan_awaiting_approval": "Plan wartet auf Genehmigung",
+              "session_completed": "Sitzung abgeschlossen",
+              "session_failed": "Sitzung fehlgeschlagen"
+            }
+          }
+        }
+      }
     }
   },
   "services": {
@@ -165,6 +186,20 @@
         "entry_id": {
           "name": "Konfigurationseintrags-ID",
           "description": "Optionale Eintrags-ID."
+        }
+      }
+    },
+    "cancel_session": {
+      "name": "Sitzung abbrechen",
+      "description": "Bricht eine aktive oder hängende Jules-Coding-Sitzung ab.",
+      "fields": {
+        "session_id": {
+          "name": "Sitzungs-ID",
+          "description": "ID der abzubrechenden Sitzung (Standard: letzte aktive Sitzung)."
+        },
+        "entry_id": {
+          "name": "Konfigurationseintrag-ID",
+          "description": "Ziel-Konfigurationseintrag-ID."
         }
       }
     },
@@ -413,6 +448,16 @@
           "description": "Ziel-Konfigurationseintrag-ID."
         }
       }
+    }
+  },
+  "issues": {
+    "auth_failed": {
+      "title": "Google Jules Authentifizierung fehlgeschlagen",
+      "description": "Die Authentifizierung bei der Jules-API unter {api_url} ist fehlgeschlagen. Bitte überprüfen Sie den API-Schlüssel oder konfigurieren Sie die Integration neu."
+    },
+    "cannot_connect": {
+      "title": "Keine Verbindung zu Google Jules",
+      "description": "Verbindung zum Jules-API-Endpunkt unter {api_url} fehlgeschlagen: {error}"
     }
   }
 }

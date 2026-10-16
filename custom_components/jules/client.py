@@ -378,8 +378,36 @@ class JulesClient:
                 json_data={"action": "approve"},
             )
 
-        data = await self._async_request("POST", f"sessions/{clean_id}:approve")
+        try:
+            data = await self._async_request("POST", f"sessions/{clean_id}:approvePlan")
+        except Exception:
+            data = await self._async_request("POST", f"sessions/{clean_id}:approve")
         return data if isinstance(data, dict) else {}
+
+    async def async_cancel_session(self, session_id: str) -> dict[str, Any]:
+        """Cancel or stop an active Jules session."""
+        clean_id = session_id.split("/")[-1]
+        if self._is_omniroute:
+            try:
+                return await self._async_request(
+                    "POST",
+                    f"api/v1/agents/tasks/{clean_id}",
+                    json_data={"action": "cancel"},
+                )
+            except Exception:
+                pass
+
+        try:
+            return await self._async_request(
+                "POST", f"sessions/{clean_id}:cancel", json_data={}
+            )
+        except Exception:
+            try:
+                return await self._async_request(
+                    "POST", f"sessions/{clean_id}/cancel", json_data={}
+                )
+            except Exception:
+                return await self._async_request("DELETE", f"sessions/{clean_id}")
 
     async def async_send_message(self, session_id: str, message: str) -> dict[str, Any]:
         """Send feedback or follow-up instruction to a running session."""

@@ -121,6 +121,27 @@
       "default_branch": {
         "name": "Default Branch"
       }
+    },
+    "image": {
+      "latest_analyzed_image": {
+        "name": "Latest Analyzed Image"
+      }
+    },
+    "event": {
+      "session_event": {
+        "name": "Session Event",
+        "state_attributes": {
+          "event_type": {
+            "name": "Event type",
+            "state": {
+              "session_started": "Session started",
+              "plan_awaiting_approval": "Plan awaiting approval",
+              "session_completed": "Session completed",
+              "session_failed": "Session failed"
+            }
+          }
+        }
+      }
     }
   },
   "services": {
@@ -161,6 +182,20 @@
         "session_id": {
           "name": "Session ID",
           "description": "ID of the session to approve."
+        },
+        "entry_id": {
+          "name": "Config Entry ID",
+          "description": "Target config entry ID."
+        }
+      }
+    },
+    "cancel_session": {
+      "name": "Cancel Session",
+      "description": "Cancel or stop an active or stuck Jules coding session.",
+      "fields": {
+        "session_id": {
+          "name": "Session ID",
+          "description": "ID of the session to cancel (defaults to latest active session)."
         },
         "entry_id": {
           "name": "Config Entry ID",
@@ -413,6 +448,16 @@
           "description": "Target config entry ID."
         }
       }
+    }
+  },
+  "issues": {
+    "auth_failed": {
+      "title": "Google Jules Authentication Failed",
+      "description": "Authentication to the Jules API at {api_url} failed. Please verify your API key or reconfigure the integration."
+    },
+    "cannot_connect": {
+      "title": "Cannot Connect to Google Jules",
+      "description": "Failed to connect to the Jules API endpoint at {api_url}: {error}"
     }
   }
 }

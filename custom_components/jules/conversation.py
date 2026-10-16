@@ -313,6 +313,22 @@ class JulesConversationEntity(
                         },
                     },
                 },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "cancel_jules_session",
+                        "description": "Cancel or stop an active or stuck Jules coding session.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "session_id": {
+                                    "type": "string",
+                                    "description": "Session ID to cancel (optional, defaults to latest session)",
+                                }
+                            },
+                        },
+                    },
+                },
             ]
         )
 
@@ -477,6 +493,25 @@ class JulesConversationEntity(
                                 session_id=s_id
                             )
                             tool_content = json.dumps(bash_res)
+                    except Exception as exc:  # noqa: BLE001
+                        tool_content = json.dumps({"error": str(exc)})
+                elif fn_name == "cancel_jules_session":
+                    try:
+                        s_id = self._get_target_session_id(fn_args)
+                        if not s_id:
+                            tool_content = json.dumps({"error": "No session ID found"})
+                        else:
+                            can_res = await self.client.async_cancel_session(
+                                session_id=s_id
+                            )
+                            await self.coordinator.async_request_refresh()
+                            tool_content = json.dumps(
+                                {
+                                    "status": "cancelled",
+                                    "session_id": s_id,
+                                    "result": can_res,
+                                }
+                            )
                     except Exception as exc:  # noqa: BLE001
                         tool_content = json.dumps({"error": str(exc)})
                 elif llm_api:
