@@ -1,0 +1,166 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Jules Configuration",
+        "description": "Connect to Google Jules API or your OmniRoute AI Gateway proxy.",
+        "data": {
+          "api_key": "API Key",
+          "api_url": "API Base URL",
+          "default_source": "Default Repository (e.g. FaserF/ha-jules)",
+          "auto_approve": "Auto-Approve Proposed Plans"
+        }
+      },
+      "reconfigure_confirm": {
+        "title": "Reconfigure Google Jules",
+        "description": "Update credentials or API endpoint for Google Jules.",
+        "data": {
+          "api_key": "API Key",
+          "api_url": "API Base URL",
+          "default_source": "Default Repository",
+          "auto_approve": "Auto-Approve Proposed Plans"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the Jules endpoint. Verify the URL and network connection.",
+      "invalid_auth": "Invalid API key or authorization token.",
+      "unknown": "An unexpected error occurred during connection test."
+    },
+    "abort": {
+      "already_configured": "This Jules account or endpoint is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Google Jules Options",
+        "description": "Configure polling rates and default workflow behavior.",
+        "data": {
+          "scan_interval": "Polling Interval (seconds)",
+          "auto_approve": "Auto-Approve Proposed Plans",
+          "default_source": "Default Repository",
+          "default_branch": "Default Branch"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "total_sessions": {
+        "name": "Total Sessions"
+      },
+      "active_sessions": {
+        "name": "Active Sessions"
+      },
+      "awaiting_approval": {
+        "name": "Awaiting Approval"
+      },
+      "completed_sessions": {
+        "name": "Completed Sessions"
+      },
+      "failed_sessions": {
+        "name": "Failed Sessions"
+      },
+      "sources_count": {
+        "name": "Connected Repositories"
+      },
+      "latest_session": {
+        "name": "Latest Session"
+      }
+    },
+    "binary_sensor": {
+      "connected": {
+        "name": "Connected"
+      },
+      "working": {
+        "name": "Agent Active"
+      },
+      "action_required": {
+        "name": "Action Required"
+      }
+    },
+    "button": {
+      "refresh": {
+        "name": "Refresh Data"
+      },
+      "approve_latest_plan": {
+        "name": "Approve Latest Plan"
+      }
+    }
+  },
+  "services": {
+    "create_session": {
+      "name": "Create Session",
+      "description": "Create and dispatch a new asynchronous coding session with Google Jules.",
+      "fields": {
+        "prompt": {
+          "name": "Prompt",
+          "description": "Task instructions for Jules."
+        },
+        "source": {
+          "name": "Repository / Source",
+          "description": "Target repository identifier."
+        },
+        "title": {
+          "name": "Title",
+          "description": "Short title for the session."
+        },
+        "branch": {
+          "name": "Base Branch",
+          "description": "Base branch to branch from."
+        },
+        "auto_approve": {
+          "name": "Auto-Approve Plan",
+          "description": "Automatically approve the proposed implementation plan."
+        },
+        "entry_id": {
+          "name": "Config Entry ID",
+          "description": "Target config entry ID."
+        }
+      }
+    },
+    "approve_plan": {
+      "name": "Approve Plan",
+      "description": "Approve a proposed execution plan for a session awaiting user approval.",
+      "fields": {
+        "session_id": {
+          "name": "Session ID",
+          "description": "ID of the session to approve."
+        },
+        "entry_id": {
+          "name": "Config Entry ID",
+          "description": "Target config entry ID."
+        }
+      }
+    },
+    "send_message": {
+      "name": "Send Message",
+      "description": "Send a feedback instruction or follow-up prompt to a running session.",
+      "fields": {
+        "message": {
+          "name": "Message",
+          "description": "Feedback message for Jules."
+        },
+        "session_id": {
+          "name": "Session ID",
+          "description": "Target session ID."
+        },
+        "entry_id": {
+          "name": "Config Entry ID",
+          "description": "Target config entry ID."
+        }
+      }
+    },
+    "refresh_sessions": {
+      "name": "Refresh Sessions",
+      "description": "Force an immediate refresh of all Jules sessions and connected repositories.",
+      "fields": {
+        "entry_id": {
+          "name": "Config Entry ID",
+          "description": "Target config entry ID."
+        }
+      }
+    }
+  }
+}

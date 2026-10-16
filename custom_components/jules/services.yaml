@@ -1,0 +1,102 @@
+create_session:
+  name: Create Session
+  description: Create and dispatch a new asynchronous coding session with Google Jules.
+  fields:
+    prompt:
+      name: Prompt
+      description: The instruction, bug report, or feature task for Jules to execute.
+      example: "Add unit tests for the authentication coordinator and fix the token refresh bug."
+      required: true
+      selector:
+        text:
+          multiline: true
+    source:
+      name: Repository / Source
+      description: Target GitHub repository or source identifier (e.g. FaserF/ha-jules).
+      example: "FaserF/ha-jules"
+      required: false
+      selector:
+        text: {}
+    title:
+      name: Title
+      description: Short descriptive title for the session.
+      example: "Fix token refresh bug"
+      required: false
+      selector:
+        text: {}
+    branch:
+      name: Base Branch
+      description: Base git branch to branch from.
+      example: "main"
+      default: "main"
+      required: false
+      selector:
+        text: {}
+    auto_approve:
+      name: Auto-Approve Plan
+      description: Whether to automatically approve the proposed implementation plan.
+      default: false
+      required: false
+      selector:
+        boolean: {}
+    entry_id:
+      name: Config Entry ID
+      description: Optional entry ID if multiple Jules accounts are configured.
+      required: false
+      selector:
+        text: {}
+
+approve_plan:
+  name: Approve Plan
+  description: Approve a proposed execution plan for a session awaiting user approval.
+  fields:
+    session_id:
+      name: Session ID
+      description: ID of the session to approve (defaults to the oldest session awaiting approval).
+      example: "sessions/12345678"
+      required: false
+      selector:
+        text: {}
+    entry_id:
+      name: Config Entry ID
+      description: Optional entry ID if multiple Jules accounts are configured.
+      required: false
+      selector:
+        text: {}
+
+send_message:
+  name: Send Message
+  description: Send a feedback instruction or follow-up prompt to a running session.
+  fields:
+    message:
+      name: Message
+      description: Feedback or instruction for Jules.
+      example: "Please also check if the error is logged to debug output."
+      required: true
+      selector:
+        text:
+          multiline: true
+    session_id:
+      name: Session ID
+      description: Target session ID (defaults to latest active session).
+      example: "sessions/12345678"
+      required: false
+      selector:
+        text: {}
+    entry_id:
+      name: Config Entry ID
+      description: Optional entry ID if multiple Jules accounts are configured.
+      required: false
+      selector:
+        text: {}
+
+refresh_sessions:
+  name: Refresh Sessions
+  description: Force an immediate refresh of all Jules sessions and connected repositories.
+  fields:
+    entry_id:
+      name: Config Entry ID
+      description: Optional entry ID if multiple Jules accounts are configured.
+      required: false
+      selector:
+        text: {}

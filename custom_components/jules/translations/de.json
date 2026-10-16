@@ -1,0 +1,166 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Jules Konfiguration",
+        "description": "Verbinde Home Assistant mit der Google Jules API oder deinem OmniRoute AI-Gateway Proxy.",
+        "data": {
+          "api_key": "API-Schlüssel",
+          "api_url": "API-Basis-URL",
+          "default_source": "Standard-Repository (z.B. FaserF/ha-jules)",
+          "auto_approve": "Vorgeschlagene Ausführungspläne automatisch genehmigen"
+        }
+      },
+      "reconfigure_confirm": {
+        "title": "Google Jules neu konfigurieren",
+        "description": "Aktualisiere Zugangsdaten oder Endpunkt für Google Jules.",
+        "data": {
+          "api_key": "API-Schlüssel",
+          "api_url": "API-Basis-URL",
+          "default_source": "Standard-Repository",
+          "auto_approve": "Vorgeschlagene Ausführungspläne automatisch genehmigen"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zum Jules-Endpunkt fehlgeschlagen. Bitte URL und Netzwerk prüfen.",
+      "invalid_auth": "Ungültiger API-Schlüssel oder Autorisierungs-Token.",
+      "unknown": "Unerwarteter Fehler beim Verbindungstest."
+    },
+    "abort": {
+      "already_configured": "Dieses Jules-Konto bzw. dieser Endpunkt ist bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Google Jules Optionen",
+        "description": "Konfiguriere Abfrageintervalle und Standard-Workflowverhalten.",
+        "data": {
+          "scan_interval": "Abfrageintervall (Sekunden)",
+          "auto_approve": "Pläne automatisch genehmigen",
+          "default_source": "Standard-Repository",
+          "default_branch": "Standard-Branch"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "total_sessions": {
+        "name": "Gesamte Sitzungen"
+      },
+      "active_sessions": {
+        "name": "Aktive Sitzungen"
+      },
+      "awaiting_approval": {
+        "name": "Wartet auf Genehmigung"
+      },
+      "completed_sessions": {
+        "name": "Abgeschlossene Sitzungen"
+      },
+      "failed_sessions": {
+        "name": "Fehlgeschlagene Sitzungen"
+      },
+      "sources_count": {
+        "name": "Verbundene Repositories"
+      },
+      "latest_session": {
+        "name": "Neueste Sitzung"
+      }
+    },
+    "binary_sensor": {
+      "connected": {
+        "name": "Verbunden"
+      },
+      "working": {
+        "name": "Agent aktiv"
+      },
+      "action_required": {
+        "name": "Aktion erforderlich"
+      }
+    },
+    "button": {
+      "refresh": {
+        "name": "Daten aktualisieren"
+      },
+      "approve_latest_plan": {
+        "name": "Neuesten Plan genehmigen"
+      }
+    }
+  },
+  "services": {
+    "create_session": {
+      "name": "Sitzung erstellen",
+      "description": "Erstelle und starte eine neue asynchrone Coding-Sitzung mit Google Jules.",
+      "fields": {
+        "prompt": {
+          "name": "Prompt / Aufgabe",
+          "description": "Aufgabenbeschreibung oder Fehlerbericht für Jules."
+        },
+        "source": {
+          "name": "Repository / Quelle",
+          "description": "Ziel-Repository (z.B. FaserF/ha-jules)."
+        },
+        "title": {
+          "name": "Titel",
+          "description": "Kurzer beschreibender Titel für die Sitzung."
+        },
+        "branch": {
+          "name": "Basis-Branch",
+          "description": "Ausgangs-Branch."
+        },
+        "auto_approve": {
+          "name": "Plan automatisch genehmigen",
+          "description": "Den von Jules erstellten Plan ohne manuelle Freigabe starten."
+        },
+        "entry_id": {
+          "name": "Konfigurationseintrag-ID",
+          "description": "Optionale ID des Konfigurationseintrags."
+        }
+      }
+    },
+    "approve_plan": {
+      "name": "Plan genehmigen",
+      "description": "Einen vorgeschlagenen Ausführungsplan für eine wartende Sitzung genehmigen.",
+      "fields": {
+        "session_id": {
+          "name": "Sitzungs-ID",
+          "description": "ID der freizugebenden Sitzung."
+        },
+        "entry_id": {
+          "name": "Konfigurationseintrag-ID",
+          "description": "Optionale ID des Konfigurationseintrags."
+        }
+      }
+    },
+    "send_message": {
+      "name": "Nachricht senden",
+      "description": "Feedback oder Anweisung an eine laufende Sitzung senden.",
+      "fields": {
+        "message": {
+          "name": "Nachricht",
+          "description": "Anweisung oder Feedback für Jules."
+        },
+        "session_id": {
+          "name": "Sitzungs-ID",
+          "description": "Ziel-Sitzungs-ID."
+        },
+        "entry_id": {
+          "name": "Konfigurationseintrag-ID",
+          "description": "Optionale ID des Konfigurationseintrags."
+        }
+      }
+    },
+    "refresh_sessions": {
+      "name": "Sitzungen aktualisieren",
+      "description": "Erzwingt eine sofortige Aktualisierung aller Jules-Sitzungen und Repositories.",
+      "fields": {
+        "entry_id": {
+          "name": "Konfigurationseintrag-ID",
+          "description": "Optionale ID des Konfigurationseintrags."
+        }
+      }
+    }
+  }
+}
