@@ -18,6 +18,8 @@ def mock_coordinator():
     coord.data = {
         "active_sessions": 1,
         "awaiting_approval": 1,
+        "remaining_quota": 0,
+        "latest_pr": {"url": "https://github.com/pull/42"},
     }
     coord.last_update_success = True
     return coord
@@ -34,14 +36,23 @@ async def test_binary_sensors(mock_coordinator, mock_config_entry):
     assert sensor_map["connected"].is_on is True
     assert sensor_map["working"].is_on is True
     assert sensor_map["action_required"].is_on is True
+    assert sensor_map["quota_exceeded"].is_on is True
+    assert sensor_map["pr_ready"].is_on is True
 
     # Test idle/off state
-    mock_coordinator.data = {"active_sessions": 0, "awaiting_approval": 0}
+    mock_coordinator.data = {
+        "active_sessions": 0,
+        "awaiting_approval": 0,
+        "remaining_quota": 50,
+        "latest_pr": None,
+    }
     mock_coordinator.last_update_success = False
 
     assert sensor_map["connected"].is_on is False
     assert sensor_map["working"].is_on is False
     assert sensor_map["action_required"].is_on is False
+    assert sensor_map["quota_exceeded"].is_on is False
+    assert sensor_map["pr_ready"].is_on is False
 
 
 @pytest.mark.asyncio

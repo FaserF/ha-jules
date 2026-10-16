@@ -7,6 +7,7 @@
         "data": {
           "api_key": "API-Schlüssel",
           "api_url": "API-Basis-URL",
+          "account_plan": "Konto-Abonnement (Plan)",
           "default_source": "Standard-Repository (z. B. FaserF/ha-jules)",
           "auto_approve": "Vorgeschlagene Pläne automatisch genehmigen"
         }
@@ -17,6 +18,7 @@
         "data": {
           "api_key": "API-Schlüssel",
           "api_url": "API-Basis-URL",
+          "account_plan": "Konto-Abonnement (Plan)",
           "default_source": "Standard-Repository",
           "auto_approve": "Vorgeschlagene Pläne automatisch genehmigen"
         }
@@ -45,7 +47,9 @@
           "scan_interval": "Abfrageintervall (Sekunden)",
           "auto_approve": "Vorgeschlagene Pläne automatisch genehmigen",
           "default_source": "Standard-Repository",
-          "default_branch": "Standard-Branch"
+          "default_branch": "Standard-Branch",
+          "account_plan": "Konto-Abonnement (Plan)",
+          "daily_quota": "Tägliches Sitzungskontingent"
         }
       }
     }
@@ -72,6 +76,21 @@
       },
       "latest_session": {
         "name": "Neueste Sitzung"
+      },
+      "quota_remaining": {
+        "name": "Verbleibendes Tageskontingent"
+      },
+      "account_plan": {
+        "name": "Konto-Abonnement"
+      },
+      "sessions_today": {
+        "name": "Heute gestartete Sitzungen"
+      },
+      "success_rate": {
+        "name": "Erfolgsquote der Sitzungen"
+      },
+      "latest_pull_request": {
+        "name": "Neuester Pull Request"
       }
     },
     "binary_sensor": {
@@ -83,6 +102,12 @@
       },
       "action_required": {
         "name": "Aktion erforderlich"
+      },
+      "quota_exceeded": {
+        "name": "Tageskontingent überschritten"
+      },
+      "pr_ready": {
+        "name": "Pull Request bereit"
       }
     },
     "button": {
@@ -446,6 +471,34 @@
         "entry_id": {
           "name": "Konfigurationseintrag-ID",
           "description": "Ziel-Konfigurationseintrag-ID."
+        }
+      }
+    },
+    "get_session_activities": {
+      "name": "Sitzungsaktivitäten abrufen",
+      "description": "Ruft den chronologischen Ablauf von Gedanken, Plänen und Terminalausgaben einer Jules-Codingsitzung ab.",
+      "fields": {
+        "session_id": {
+          "name": "Sitzungs-ID",
+          "description": "ID der Sitzung (Standard: neueste Sitzung)."
+        },
+        "entry_id": {
+          "name": "Konfigurationseintrag-ID",
+          "description": "Ziel-Konfigurationseintrag-ID."
+        }
+      }
+    },
+    "get_fleet_status": {
+      "name": "Flottenstatus abrufen",
+      "description": "Aggregiert Kontingent, Nutzung und Status über alle konfigurierten Jules-Konten und empfiehlt das Konto mit der höchsten verbleibenden Kapazität."
+    },
+    "sync_sources": {
+      "name": "Quellen synchronisieren",
+      "description": "Aktualisiert die autorisierten GitHub-Repositories für ein oder alle Jules-Konten.",
+      "fields": {
+        "entry_id": {
+          "name": "Konfigurationseintrag-ID",
+          "description": "Optionale Eintrags-ID (Standard: alle konfigurierten Konten)."
         }
       }
     }

@@ -8,7 +8,7 @@ from typing import Final
 from homeassistant.const import Platform
 
 DOMAIN: Final = "jules"
-INTEGRATION_VERSION: Final = "2026.10.9"
+INTEGRATION_VERSION: Final = "2026.10.10"
 LOGGER: Final = logging.getLogger(__package__)
 
 DEFAULT_NAME: Final = "Google Jules"
@@ -22,6 +22,18 @@ CONF_AUTO_APPROVE: Final = "auto_approve"
 CONF_DEFAULT_SOURCE: Final = "default_source"
 CONF_DEFAULT_BRANCH: Final = "default_branch"
 CONF_TOKEN_COMPRESSION: Final = "token_compression"
+CONF_ACCOUNT_PLAN: Final = "account_plan"
+CONF_DAILY_QUOTA: Final = "daily_quota"
+
+DEFAULT_ACCOUNT_PLAN: Final = "Google AI Pro"
+DEFAULT_DAILY_QUOTA: Final = 100
+
+ACCOUNT_PLANS: Final[dict[str, int]] = {
+    "Google AI Ultra": 300,
+    "Google AI Pro": 100,
+    "Google AI Plus": 15,
+    "Free": 15,
+}
 
 # Conversation & AI Task options
 CONF_CHAT_MODEL: Final = "chat_model"
@@ -105,6 +117,9 @@ SERVICE_ANALYZE_AUTOMATION: Final = "analyze_automation"
 SERVICE_SUGGEST_AUTOMATIONS: Final = "suggest_automations"
 SERVICE_DIAGNOSE_LOGS: Final = "diagnose_logs"
 SERVICE_ANALYZE_CAMERA: Final = "analyze_camera"
+SERVICE_GET_SESSION_ACTIVITIES: Final = "get_session_activities"
+SERVICE_GET_FLEET_STATUS: Final = "get_fleet_status"
+SERVICE_SYNC_SOURCES: Final = "sync_sources"
 
 # Semantic Status (matching @google/jules-mcp)
 STATUS_BUSY: Final = "busy"

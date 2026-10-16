@@ -19,6 +19,10 @@ from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
+    SelectOptionDict,
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
     TextSelector,
     TextSelectorConfig,
     TextSelectorType,
@@ -26,19 +30,24 @@ from homeassistant.helpers.selector import (
 
 from .client import CannotConnect, InvalidAuth, JulesClient
 from .const import (
+    ACCOUNT_PLANS,
+    CONF_ACCOUNT_PLAN,
     CONF_AI_TASK_MODEL,
     CONF_API_KEY,
     CONF_API_URL,
     CONF_AUTO_APPROVE,
     CONF_CHAT_MODEL,
+    CONF_DAILY_QUOTA,
     CONF_DEFAULT_BRANCH,
     CONF_DEFAULT_SOURCE,
     CONF_MAX_TOKENS,
     CONF_PROMPT,
     CONF_TEMPERATURE,
+    DEFAULT_ACCOUNT_PLAN,
     DEFAULT_AI_TASK_MODEL,
     DEFAULT_API_URL,
     DEFAULT_CHAT_MODEL,
+    DEFAULT_DAILY_QUOTA,
     DEFAULT_MAX_TOKENS,
     DEFAULT_NAME,
     DEFAULT_PROMPT,
@@ -104,6 +113,16 @@ class JulesConfigFlow(ConfigFlow, domain=DOMAIN):
                 ),
                 vol.Optional(CONF_API_URL, default=DEFAULT_API_URL): TextSelector(
                     TextSelectorConfig(type=TextSelectorType.URL)
+                ),
+                vol.Optional(
+                    CONF_ACCOUNT_PLAN, default=DEFAULT_ACCOUNT_PLAN
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=[
+                            SelectOptionDict(value=k, label=k) for k in ACCOUNT_PLANS
+                        ],
+                        mode=SelectSelectorMode.DROPDOWN,
+                    )
                 ),
                 vol.Optional(CONF_DEFAULT_SOURCE, default=""): TextSelector(
                     TextSelectorConfig(type=TextSelectorType.TEXT)
@@ -280,6 +299,38 @@ class JulesOptionsFlowHandler(OptionsFlow):
                     CONF_DEFAULT_BRANCH,
                     default=self.config_entry.options.get(CONF_DEFAULT_BRANCH, "main"),
                 ): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
+                vol.Optional(
+                    CONF_ACCOUNT_PLAN,
+                    default=self.config_entry.options.get(
+                        CONF_ACCOUNT_PLAN,
+                        self.config_entry.data.get(
+                            CONF_ACCOUNT_PLAN, DEFAULT_ACCOUNT_PLAN
+                        ),
+                    ),
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=[
+                            SelectOptionDict(value=k, label=k) for k in ACCOUNT_PLANS
+                        ],
+                        mode=SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional(
+                    CONF_DAILY_QUOTA,
+                    default=self.config_entry.options.get(
+                        CONF_DAILY_QUOTA,
+                        self.config_entry.data.get(
+                            CONF_DAILY_QUOTA, DEFAULT_DAILY_QUOTA
+                        ),
+                    ),
+                ): NumberSelector(
+                    NumberSelectorConfig(
+                        min=1,
+                        max=5000,
+                        step=1,
+                        mode=NumberSelectorMode.BOX,
+                    )
+                ),
             }
         )
 

@@ -21,6 +21,21 @@
       },
       "latest_session": {
         "default": "mdi:code-braces-box"
+      },
+      "quota_remaining": {
+        "default": "mdi:gauge"
+      },
+      "account_plan": {
+        "default": "mdi:shield-star"
+      },
+      "sessions_today": {
+        "default": "mdi:calendar-today"
+      },
+      "success_rate": {
+        "default": "mdi:percent"
+      },
+      "latest_pull_request": {
+        "default": "mdi:source-pull"
       }
     },
     "binary_sensor": {
@@ -32,6 +47,12 @@
       },
       "action_required": {
         "default": "mdi:alert-decagram"
+      },
+      "quota_exceeded": {
+        "default": "mdi:alert-circle-outline"
+      },
+      "pr_ready": {
+        "default": "mdi:git-pull-request"
       }
     },
     "button": {
@@ -120,6 +141,15 @@
     },
     "analyze_camera": {
       "default": "mdi:camera-account"
+    },
+    "get_session_activities": {
+      "default": "mdi:timeline-clock-outline"
+    },
+    "get_fleet_status": {
+      "default": "mdi:server-network"
+    },
+    "sync_sources": {
+      "default": "mdi:source-repository"
     }
   }
 }

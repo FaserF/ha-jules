@@ -107,21 +107,46 @@ async def test_services_lifecycle(
     mock_client.async_chat_completion = AsyncMock(
         return_value={"choices": [{"message": {"content": "AI response"}}], "usage": {}}
     )
-    call_ai = MagicMock()
-    call_ai.data = {"prompt": "Explain state machines"}
+    # Test get_session_activities
     from custom_components.jules.const import (
-        SERVICE_ANALYZE_AUTOMATION,
-        SERVICE_EXECUTE_AI_TASK,
+        SERVICE_GET_FLEET_STATUS,
+        SERVICE_GET_SESSION_ACTIVITIES,
+        SERVICE_SYNC_SOURCES,
     )
 
-    res_ai = await registered_services[SERVICE_EXECUTE_AI_TASK](call_ai)
-    assert res_ai["response"] == "AI response"
+    mock_client.async_get_activities = AsyncMock(
+        return_value=[{"id": "act-1", "type": "thought", "summary": "Thinking"}]
+    )
+    call_act = MagicMock()
+    call_act.data = {"session_id": "sessions/201"}
+    res_act = await registered_services[SERVICE_GET_SESSION_ACTIVITIES](call_act)
+    assert res_act["session_id"] == "sessions/201"
+    assert res_act["count"] == 1
+    mock_client.async_get_activities.assert_called_once_with("sessions/201")
 
-    # Test analyze_automation
-    call_auto = MagicMock()
-    call_auto.data = {"automation_yaml": "trigger: - platform: state"}
-    res_auto = await registered_services[SERVICE_ANALYZE_AUTOMATION](call_auto)
-    assert res_auto["analysis"] == "AI response"
+    # Test get_fleet_status
+    mock_coordinator.data.update(
+        {
+            "remaining_quota": 80,
+            "today_used": 20,
+            "active_sessions": 1,
+            "reachable": True,
+            "account_plan": "Google AI Pro",
+            "daily_limit": 100,
+        }
+    )
+    call_fleet = MagicMock()
+    call_fleet.data = {}
+    res_fleet = await registered_services[SERVICE_GET_FLEET_STATUS](call_fleet)
+    assert res_fleet["total_accounts"] == 1
+    assert res_fleet["fleet_quota_remaining"] == 80
+    assert res_fleet["recommended_entry_id"] == mock_config_entry.entry_id
+
+    # Test sync_sources
+    call_sync = MagicMock()
+    call_sync.data = {}
+    res_sync = await registered_services[SERVICE_SYNC_SOURCES](call_sync)
+    assert res_sync["synced_count"] == 1
 
     # Test unload
     await async_unload_services(hass)

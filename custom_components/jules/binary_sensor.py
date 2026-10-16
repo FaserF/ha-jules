@@ -52,6 +52,22 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[JulesBinarySensorDescription, ...] = (
             coord.data and coord.data.get("awaiting_approval", 0) > 0
         ),
     ),
+    JulesBinarySensorDescription(
+        key="quota_exceeded",
+        translation_key="quota_exceeded",
+        device_class=BinarySensorDeviceClass.PROBLEM,
+        icon="mdi:alert-circle-outline",
+        is_on_fn=lambda coord: bool(
+            coord.data and coord.data.get("remaining_quota", 100) <= 0
+        ),
+    ),
+    JulesBinarySensorDescription(
+        key="pr_ready",
+        translation_key="pr_ready",
+        icon="mdi:git-pull-request",
+        entity_registry_enabled_default=False,
+        is_on_fn=lambda coord: bool(coord.data and bool(coord.data.get("latest_pr"))),
+    ),
 )
 
 

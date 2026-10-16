@@ -39,6 +39,8 @@ from .const import (
     SERVICE_EXECUTE_AI_TASK,
     SERVICE_GET_BASH_OUTPUTS,
     SERVICE_GET_CODE_REVIEW,
+    SERVICE_GET_FLEET_STATUS,
+    SERVICE_GET_SESSION_ACTIVITIES,
     SERVICE_GET_SESSION_STATE,
     SERVICE_LIST_SESSIONS,
     SERVICE_REFRESH_SESSIONS,
@@ -46,6 +48,7 @@ from .const import (
     SERVICE_SEND_REPLY,
     SERVICE_SHOW_CODE_DIFF,
     SERVICE_SUGGEST_AUTOMATIONS,
+    SERVICE_SYNC_SOURCES,
     STATE_AWAITING_APPROVAL,
 )
 from .coordinator import JulesDataUpdateCoordinator
@@ -136,6 +139,21 @@ SEND_REPLY_SCHEMA = vol.Schema(
 )
 
 REFRESH_SESSIONS_SCHEMA = vol.Schema(
+    {
+        vol.Optional("entry_id"): cv.string,
+    }
+)
+
+GET_SESSION_ACTIVITIES_SCHEMA = vol.Schema(
+    {
+        vol.Optional("session_id"): cv.string,
+        vol.Optional("entry_id"): cv.string,
+    }
+)
+
+GET_FLEET_STATUS_SCHEMA = vol.Schema({})
+
+SYNC_SOURCES_SCHEMA = vol.Schema(
     {
         vol.Optional("entry_id"): cv.string,
     }
@@ -720,6 +738,152 @@ async def async_setup_services(hass: HomeAssistant) -> None:
             "model": model,
         }
 
+    async def handle_get_session_activities(call: ServiceCall) -> ServiceResponse:
+        """Fetch timeline of activities for a session."""
+        session_id = call.data.get("session_id")
+        entry_id = call.data.get("entry_id")
+        client, coordinator, _, _ = _get_entry_context(hass, entry_id)
+
+        target_id = session_id
+        if not target_id:
+            latest = (
+                coordinator.data.get("latest_session") if coordinator.data else None
+            )
+            if latest:
+                target_id = latest.get("name") or latest.get("id")
+
+        if not target_id:
+            raise HomeAssistantError(
+                "No active or specified session to retrieve activities for"
+            )
+
+        activities = await client.async_get_activities(target_id)
+        return {
+            "session_id": target_id,
+            "activities": activities,
+            "count": len(activities),
+        }
+
+    async def handle_get_fleet_status(call: ServiceCall) -> ServiceResponse:
+        """Aggregate quota, usage, and status across all Jules accounts."""
+        entries = hass.data.get(DOMAIN, {})
+        if not entries:
+            raise HomeAssistantError("No Jules accounts configured in Home Assistant")
+
+        accounts_data: list[dict[str, Any]] = []
+        total_remaining = 0
+        total_today_used = 0
+        total_active_sessions = 0
+        best_entry_id: str | None = None
+        best_entry_title = ""
+        max_quota = -1
+
+        for ent_id, ent_data in entries.items():
+            coord: JulesDataUpdateCoordinator = ent_data[DATA_COORDINATOR]
+            c_data = coord.data or {}
+            title = coord.config_entry.title
+            quota_rem = int(c_data.get("remaining_quota", 0))
+            used_today = int(c_data.get("today_used", 0))
+            active_cnt = int(c_data.get("active_sessions", 0))
+            reachable = bool(c_data.get("reachable", True))
+
+            total_remaining += quota_rem
+            total_today_used += used_today
+            total_active_sessions += active_cnt
+
+            if reachable and quota_rem > max_quota:
+                max_quota = quota_rem
+                best_entry_id = ent_id
+                best_entry_title = title
+
+            accounts_data.append(
+                {
+                    "entry_id": ent_id,
+                    "title": title,
+                    "account_plan": c_data.get("account_plan", "Free"),
+                    "daily_limit": c_data.get("daily_limit", 15),
+                    "remaining_quota": quota_rem,
+                    "today_used": used_today,
+                    "active_sessions": active_cnt,
+                    "completed_sessions": c_data.get("completed_sessions", 0),
+                    "failed_sessions": c_data.get("failed_sessions", 0),
+                    "success_rate": c_data.get("success_rate", 100.0),
+                    "reachable": reachable,
+                    "latency_ms": c_data.get("latency_ms"),
+                }
+            )
+
+        return {
+            "total_accounts": len(accounts_data),
+            "fleet_quota_remaining": total_remaining,
+            "fleet_sessions_today": total_today_used,
+            "fleet_active_sessions": total_active_sessions,
+            "recommended_entry_id": best_entry_id,
+            "recommended_account_title": best_entry_title,
+            "accounts": accounts_data,
+        }
+
+    async def handle_sync_sources(call: ServiceCall) -> ServiceResponse:
+        """Trigger source repository refresh across one or all configured accounts."""
+        entry_id = call.data.get("entry_id")
+        entries = hass.data.get(DOMAIN, {})
+        if not entries:
+            raise HomeAssistantError("No Jules accounts configured in Home Assistant")
+
+        synced: list[dict[str, Any]] = []
+        if entry_id:
+            if entry_id not in entries:
+                raise HomeAssistantError(f"Entry {entry_id} not found")
+            coord = entries[entry_id][DATA_COORDINATOR]
+            await coord.async_request_refresh()
+            sources = coord.data.get("sources", []) if coord.data else []
+            synced.append(
+                {
+                    "entry_id": entry_id,
+                    "title": coord.config_entry.title,
+                    "sources_count": len(sources),
+                }
+            )
+        else:
+            for ent_id, ent_data in entries.items():
+                coord = ent_data[DATA_COORDINATOR]
+                await coord.async_request_refresh()
+                sources = coord.data.get("sources", []) if coord.data else []
+                synced.append(
+                    {
+                        "entry_id": ent_id,
+                        "title": coord.config_entry.title,
+                        "sources_count": len(sources),
+                    }
+                )
+
+        return {
+            "synced_count": len(synced),
+            "accounts": synced,
+        }
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_GET_SESSION_ACTIVITIES,
+        handle_get_session_activities,
+        schema=GET_SESSION_ACTIVITIES_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_GET_FLEET_STATUS,
+        handle_get_fleet_status,
+        schema=GET_FLEET_STATUS_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SYNC_SOURCES,
+        handle_sync_sources,
+        schema=SYNC_SOURCES_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_CREATE_SESSION,
@@ -853,6 +1017,9 @@ async def async_unload_services(hass: HomeAssistant) -> None:
         SERVICE_SUGGEST_AUTOMATIONS,
         SERVICE_DIAGNOSE_LOGS,
         SERVICE_ANALYZE_CAMERA,
+        SERVICE_GET_SESSION_ACTIVITIES,
+        SERVICE_GET_FLEET_STATUS,
+        SERVICE_SYNC_SOURCES,
     ):
         if hass.services.has_service(DOMAIN, service):
             hass.services.async_remove(DOMAIN, service)

@@ -23,6 +23,19 @@ def mock_coordinator():
         "failed_sessions": 0,
         "sources_count": 3,
         "sources": [{"name": "sources/github/FaserF/ha-jules"}],
+        "remaining_quota": 95,
+        "account_plan": "Google AI Ultra",
+        "daily_limit": 300,
+        "today_used": 5,
+        "reset_time_utc": "2026-10-17T00:00:00+00:00",
+        "success_rate": 87.5,
+        "latest_pr": {
+            "url": "https://github.com/pull/42",
+            "title": "Add testing",
+            "base_ref": "main",
+            "head_ref": "patch-1",
+            "session_id": "sessions/42",
+        },
         "latest_session": {
             "name": "sessions/42",
             "state": "IN_PROGRESS",
@@ -53,11 +66,20 @@ async def test_sensors_values(mock_coordinator, mock_config_entry):
     assert sensor_map["failed_sessions"].native_value == 0
     assert sensor_map["sources_count"].native_value == 3
     assert sensor_map["latest_session"].native_value == "in_progress"
+    assert sensor_map["quota_remaining"].native_value == 95
+    assert sensor_map["account_plan"].native_value == "Google AI Ultra"
+    assert sensor_map["sessions_today"].native_value == 5
+    assert sensor_map["success_rate"].native_value == 87.5
+    assert sensor_map["latest_pull_request"].native_value == "Add testing"
 
     attrs = sensor_map["latest_session"].extra_state_attributes
     assert attrs["session_id"] == "sessions/42"
     assert attrs["title"] == "Add testing"
     assert attrs["pr_url"] == "https://github.com/pull/42"
+
+    quota_attrs = sensor_map["quota_remaining"].extra_state_attributes
+    assert quota_attrs["daily_limit"] == 300
+    assert quota_attrs["today_used"] == 5
 
 
 @pytest.mark.asyncio

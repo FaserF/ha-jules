@@ -7,6 +7,7 @@
         "data": {
           "api_key": "API Key",
           "api_url": "API Base URL",
+          "account_plan": "Account Plan Tier",
           "default_source": "Default Repository (e.g. FaserF/ha-jules)",
           "auto_approve": "Auto-Approve Proposed Plans"
         }
@@ -17,6 +18,7 @@
         "data": {
           "api_key": "API Key",
           "api_url": "API Base URL",
+          "account_plan": "Account Plan Tier",
           "default_source": "Default Repository",
           "auto_approve": "Auto-Approve Proposed Plans"
         }
@@ -45,7 +47,9 @@
           "scan_interval": "Polling Interval (seconds)",
           "auto_approve": "Auto-Approve Proposed Plans",
           "default_source": "Default Repository",
-          "default_branch": "Default Branch"
+          "default_branch": "Default Branch",
+          "account_plan": "Account Plan Tier",
+          "daily_quota": "Daily Session Quota"
         }
       }
     }
@@ -72,6 +76,21 @@
       },
       "latest_session": {
         "name": "Latest Session"
+      },
+      "quota_remaining": {
+        "name": "Daily Quota Remaining"
+      },
+      "account_plan": {
+        "name": "Account Plan"
+      },
+      "sessions_today": {
+        "name": "Sessions Dispatched Today"
+      },
+      "success_rate": {
+        "name": "Session Success Rate"
+      },
+      "latest_pull_request": {
+        "name": "Latest Pull Request"
       }
     },
     "binary_sensor": {
@@ -83,6 +102,12 @@
       },
       "action_required": {
         "name": "Action Required"
+      },
+      "quota_exceeded": {
+        "name": "Daily Quota Exceeded"
+      },
+      "pr_ready": {
+        "name": "Pull Request Ready"
       }
     },
     "button": {
@@ -446,6 +471,34 @@
         "entry_id": {
           "name": "Config Entry ID",
           "description": "Target config entry ID."
+        }
+      }
+    },
+    "get_session_activities": {
+      "name": "Get Session Activities",
+      "description": "Fetch the timeline of thought, plan, and command activities for a Jules coding session.",
+      "fields": {
+        "session_id": {
+          "name": "Session ID",
+          "description": "ID of the session (defaults to latest)."
+        },
+        "entry_id": {
+          "name": "Config Entry ID",
+          "description": "Target config entry ID."
+        }
+      }
+    },
+    "get_fleet_status": {
+      "name": "Get Fleet Status",
+      "description": "Aggregate quota, usage, and status across all configured Jules accounts and identify the recommended account with the most remaining quota."
+    },
+    "sync_sources": {
+      "name": "Sync Sources",
+      "description": "Refresh authorized repositories and sources for one or all Jules accounts.",
+      "fields": {
+        "entry_id": {
+          "name": "Config Entry ID",
+          "description": "Optional entry ID to sync (defaults to all configured accounts)."
         }
       }
     }

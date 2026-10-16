@@ -12,6 +12,7 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -104,6 +105,64 @@ SENSOR_DESCRIPTIONS: tuple[JulesSensorDescription, ...] = (
             if data.get("latest_session")
             else {}
         ),
+    ),
+    JulesSensorDescription(
+        key="quota_remaining",
+        translation_key="quota_remaining",
+        icon="mdi:gauge",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="sessions",
+        value_fn=lambda data: data.get("remaining_quota", 0),
+        attributes_fn=lambda data: {
+            "daily_limit": data.get("daily_limit", 100),
+            "today_used": data.get("today_used", 0),
+            "plan": data.get("account_plan", "Google AI Pro"),
+            "reset_time": data.get("reset_time_utc"),
+        },
+    ),
+    JulesSensorDescription(
+        key="account_plan",
+        translation_key="account_plan",
+        icon="mdi:shield-star",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data.get("account_plan", "Google AI Pro"),
+        attributes_fn=lambda data: {
+            "daily_limit": data.get("daily_limit", 100),
+        },
+    ),
+    JulesSensorDescription(
+        key="sessions_today",
+        translation_key="sessions_today",
+        icon="mdi:calendar-today",
+        state_class=SensorStateClass.TOTAL,
+        native_unit_of_measurement="sessions",
+        entity_registry_enabled_default=False,
+        value_fn=lambda data: data.get("today_used", 0),
+        attributes_fn=lambda data: {
+            "daily_limit": data.get("daily_limit", 100),
+            "remaining": data.get("remaining_quota", 0),
+        },
+    ),
+    JulesSensorDescription(
+        key="success_rate",
+        translation_key="success_rate",
+        icon="mdi:percent",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="%",
+        entity_registry_enabled_default=False,
+        value_fn=lambda data: data.get("success_rate", 100.0),
+        attributes_fn=lambda data: {
+            "completed": data.get("completed_sessions", 0),
+            "failed": data.get("failed_sessions", 0),
+        },
+    ),
+    JulesSensorDescription(
+        key="latest_pull_request",
+        translation_key="latest_pull_request",
+        icon="mdi:source-pull",
+        entity_registry_enabled_default=False,
+        value_fn=lambda data: (data.get("latest_pr") or {}).get("title") or "None",
+        attributes_fn=lambda data: data.get("latest_pr") or {},
     ),
 )
 
