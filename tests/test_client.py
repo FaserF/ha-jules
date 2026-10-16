@@ -177,3 +177,71 @@ async def test_client_not_found(mock_session):
 
     with pytest.raises(SessionNotFoundError):
         await client._async_request("GET", "sessions/unknown")
+
+
+@pytest.mark.asyncio
+async def test_omniroute_sessions_and_tasks(mock_session):
+    mock_tasks = {
+        "data": [
+            {
+                "id": "jules_task_1",
+                "externalId": "sessions/9999",
+                "status": "running",
+                "prompt": "Optimize database queries",
+                "source": {"repoName": "FaserF/ha-jules"},
+                "createdAt": "2026-10-15T00:00:00Z",
+                "result": {"prUrl": "https://github.com/FaserF/ha-jules/pull/1"},
+            }
+        ]
+    }
+    mock_session.request = MagicMock(return_value=make_mock_response(200, mock_tasks))
+    client = JulesClient(
+        mock_session, api_key="test-key", api_url="http://100.64.0.1:20128"
+    )
+    assert client.is_omniroute is True
+
+    test_res = await client.async_test_connection()
+    assert test_res is True
+
+    sessions = await client.async_get_sessions()
+    assert len(sessions) == 1
+    assert sessions[0]["id"] == "9999"
+    assert sessions[0]["state"] == "IN_PROGRESS"
+    assert sessions[0]["pullRequestUrl"] == "https://github.com/FaserF/ha-jules/pull/1"
+
+    sources = await client.async_get_sources()
+    assert len(sources) == 1
+    assert sources[0]["id"] == "FaserF/ha-jules"
+
+
+@pytest.mark.asyncio
+async def test_omniroute_create_and_actions(mock_session):
+    mock_create_resp = {
+        "data": {
+            "id": "jules_task_2",
+            "externalId": "sessions/8888",
+            "status": "queued",
+            "prompt": "Add feature",
+        }
+    }
+    mock_session.request = MagicMock(
+        return_value=make_mock_response(201, mock_create_resp)
+    )
+    client = JulesClient(
+        mock_session, api_key="test-key", api_url="http://100.64.0.1:20128"
+    )
+
+    res = await client.async_create_session(
+        prompt="Add feature", source="FaserF/ha-jules"
+    )
+    assert res["id"] == "8888"
+    assert res["state"] == "QUEUED"
+
+    mock_session.request = MagicMock(
+        return_value=make_mock_response(200, {"success": True})
+    )
+    appr = await client.async_approve_plan("sessions/8888")
+    assert appr.get("success") is True
+
+    msg = await client.async_send_message("sessions/8888", "Great job!")
+    assert msg.get("success") is True
