@@ -2,24 +2,15 @@
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.device_registry import DeviceInfo
 
-from .const import CONF_API_URL, DOMAIN
+from .const import CONF_API_URL, DOMAIN, INTEGRATION_VERSION
 
 
 def get_integration_version() -> str:
-    """Read integration version from manifest.json."""
-    try:
-        manifest_path = Path(__file__).parent / "manifest.json"
-        with open(manifest_path, encoding="utf-8") as f:
-            data = json.load(f)
-            return str(data.get("version", ""))
-    except Exception:
-        return ""
+    """Return integration version."""
+    return INTEGRATION_VERSION
 
 
 def get_device_info(entry: ConfigEntry, sw_version: str | None = None) -> DeviceInfo:

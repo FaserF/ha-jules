@@ -425,15 +425,39 @@ class JulesClient:
                         if resp.status == 200:
                             data = await resp.json()
                             model_list = data.get("data", [])
-                            models = [
-                                m["id"]
+                            raw_models = [
+                                str(m["id"])
                                 for m in model_list
                                 if isinstance(m, dict)
                                 and "id" in m
-                                and not m["id"].startswith("meta-")
+                                and not str(m["id"]).startswith("meta-")
                             ]
-                            if models:
-                                return sorted(models)
+                            cascades = [m for m in raw_models if "cascade" in m]
+                            curated = [
+                                m
+                                for m in raw_models
+                                if m.startswith(
+                                    (
+                                        "gemini-",
+                                        "claude-",
+                                        "gpt-",
+                                        "deepseek-",
+                                        "qwen-",
+                                        "o1",
+                                        "o3",
+                                    )
+                                )
+                                and not m.endswith(("-embedding", "-embed", "-tts"))
+                                and len(m) <= 35
+                            ]
+                            seen: set[str] = set()
+                            filtered: list[str] = []
+                            for m in cascades + curated:
+                                if m not in seen:
+                                    seen.add(m)
+                                    filtered.append(m)
+                            if filtered:
+                                return sorted(filtered[:40])
             except Exception as exc:
                 LOGGER.debug("Could not fetch models from OmniRoute: %s", exc)
         return [

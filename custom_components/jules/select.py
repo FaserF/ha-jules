@@ -67,10 +67,16 @@ class JulesActiveModelSelect(
         """Return available model/cascade options."""
         models: list[str] = []
         if self.coordinator.data and "models" in self.coordinator.data:
-            models = self.coordinator.data["models"]
+            models = list(self.coordinator.data["models"])
         if not models:
-            models = DEFAULT_CASCADES
-        return models
+            models = list(DEFAULT_CASCADES)
+        selected = self.entry.options.get(
+            CONF_CHAT_MODEL,
+            self.entry.data.get(CONF_CHAT_MODEL, DEFAULT_CHAT_MODEL),
+        )
+        if selected and selected not in models:
+            models.insert(0, selected)
+        return models[:40]
 
     @property
     def current_option(self) -> str | None:
