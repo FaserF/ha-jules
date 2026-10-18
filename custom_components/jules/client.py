@@ -44,7 +44,7 @@ class JulesClient:
         session: aiohttp.ClientSession,
         api_key: str,
         api_url: str = "https://jules.googleapis.com/v1alpha",
-        timeout: float = 30.0,
+        timeout: float = 120.0,
     ) -> None:
         """Initialize the Jules client."""
         self._session = session
@@ -940,7 +940,7 @@ class JulesClient:
                 if msg_info and msg_info.get("content"):
                     reply = msg_info["content"]
                     break
-                if time.perf_counter() - start > 25:
+                if time.perf_counter() - start > 120:
                     break
             return {
                 "success": True,

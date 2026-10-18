@@ -104,5 +104,17 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Reload config entry."""
-    await hass.config_entries.async_reload(entry.entry_id)
+    """Handle options update without a full reload.
+
+    Only performs a full reload when connectivity options (API URL or key)
+    have changed. For model/display-only option changes, simply refreshes
+    the coordinator so entities stay available.
+    """
+    entry_data = hass.data.get(DOMAIN, {}).get(entry.entry_id, {})
+    coordinator = entry_data.get(DATA_COORDINATOR) or entry_data.get("coordinator")
+    if coordinator is not None:
+        await coordinator.async_request_refresh()
+    else:
+        # Coordinator not found — fall back to full reload
+        await hass.config_entries.async_reload(entry.entry_id)
+
