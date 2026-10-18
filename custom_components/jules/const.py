@@ -13,7 +13,7 @@ LOGGER: Final = logging.getLogger(__package__)
 
 DEFAULT_NAME: Final = "Google Jules"
 DEFAULT_API_URL: Final = "https://jules.googleapis.com/v1alpha"
-DEFAULT_SCAN_INTERVAL: Final = 60  # seconds
+DEFAULT_SCAN_INTERVAL: Final = 180  # seconds
 
 # Config keys
 CONF_API_KEY: Final = "api_key"
