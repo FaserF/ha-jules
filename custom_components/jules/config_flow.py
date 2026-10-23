@@ -19,6 +19,10 @@ from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
+    SelectOptionDict,
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
     TextSelector,
     TextSelectorConfig,
     TextSelectorType,
@@ -26,14 +30,29 @@ from homeassistant.helpers.selector import (
 
 from .client import CannotConnect, InvalidAuth, JulesClient
 from .const import (
+    ACCOUNT_PLANS,
+    CONF_ACCOUNT_PLAN,
+    CONF_AI_TASK_MODEL,
     CONF_API_KEY,
     CONF_API_URL,
     CONF_AUTO_APPROVE,
+    CONF_CHAT_MODEL,
+    CONF_DAILY_QUOTA,
     CONF_DEFAULT_BRANCH,
     CONF_DEFAULT_SOURCE,
+    CONF_MAX_TOKENS,
+    CONF_PROMPT,
+    CONF_TEMPERATURE,
+    DEFAULT_ACCOUNT_PLAN,
+    DEFAULT_AI_TASK_MODEL,
     DEFAULT_API_URL,
+    DEFAULT_CHAT_MODEL,
+    DEFAULT_DAILY_QUOTA,
+    DEFAULT_MAX_TOKENS,
     DEFAULT_NAME,
+    DEFAULT_PROMPT,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_TEMPERATURE,
     DOMAIN,
     LOGGER,
 )
@@ -76,8 +95,11 @@ class JulesConfigFlow(ConfigFlow, domain=DOMAIN):
                 LOGGER.exception("Unexpected error during connection test: %s", err)
                 errors["base"] = "unknown"
             else:
+                title = (
+                    user_input.get("name") or user_input.get("title") or DEFAULT_NAME
+                )
                 return self.async_create_entry(
-                    title=user_input.get("title") or DEFAULT_NAME,
+                    title=title,
                     data=user_input,
                 )
 
@@ -86,8 +108,21 @@ class JulesConfigFlow(ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_API_KEY): TextSelector(
                     TextSelectorConfig(type=TextSelectorType.PASSWORD)
                 ),
+                vol.Optional("name"): TextSelector(
+                    TextSelectorConfig(type=TextSelectorType.TEXT)
+                ),
                 vol.Optional(CONF_API_URL, default=DEFAULT_API_URL): TextSelector(
                     TextSelectorConfig(type=TextSelectorType.URL)
+                ),
+                vol.Optional(
+                    CONF_ACCOUNT_PLAN, default=DEFAULT_ACCOUNT_PLAN
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=[
+                            SelectOptionDict(value=k, label=k) for k in ACCOUNT_PLANS
+                        ],
+                        mode=SelectSelectorMode.DROPDOWN,
+                    )
                 ),
                 vol.Optional(CONF_DEFAULT_SOURCE, default=""): TextSelector(
                     TextSelectorConfig(type=TextSelectorType.TEXT)
@@ -182,6 +217,57 @@ class JulesOptionsFlowHandler(OptionsFlow):
         schema = vol.Schema(
             {
                 vol.Optional(
+                    CONF_CHAT_MODEL,
+                    default=self.config_entry.options.get(
+                        CONF_CHAT_MODEL,
+                        self.config_entry.data.get(CONF_CHAT_MODEL, DEFAULT_CHAT_MODEL),
+                    ),
+                ): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
+                vol.Optional(
+                    CONF_AI_TASK_MODEL,
+                    default=self.config_entry.options.get(
+                        CONF_AI_TASK_MODEL,
+                        self.config_entry.data.get(
+                            CONF_AI_TASK_MODEL, DEFAULT_AI_TASK_MODEL
+                        ),
+                    ),
+                ): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
+                vol.Optional(
+                    CONF_PROMPT,
+                    default=self.config_entry.options.get(
+                        CONF_PROMPT,
+                        self.config_entry.data.get(CONF_PROMPT, DEFAULT_PROMPT),
+                    ),
+                ): TextSelector(
+                    TextSelectorConfig(type=TextSelectorType.TEXT, multiline=True)
+                ),
+                vol.Optional(
+                    CONF_TEMPERATURE,
+                    default=self.config_entry.options.get(
+                        CONF_TEMPERATURE, DEFAULT_TEMPERATURE
+                    ),
+                ): NumberSelector(
+                    NumberSelectorConfig(
+                        min=0.0,
+                        max=1.0,
+                        step=0.1,
+                        mode=NumberSelectorMode.SLIDER,
+                    )
+                ),
+                vol.Optional(
+                    CONF_MAX_TOKENS,
+                    default=self.config_entry.options.get(
+                        CONF_MAX_TOKENS, DEFAULT_MAX_TOKENS
+                    ),
+                ): NumberSelector(
+                    NumberSelectorConfig(
+                        min=100,
+                        max=8192,
+                        step=100,
+                        mode=NumberSelectorMode.BOX,
+                    )
+                ),
+                vol.Optional(
                     "scan_interval",
                     default=self.config_entry.options.get(
                         "scan_interval", DEFAULT_SCAN_INTERVAL
@@ -213,6 +299,38 @@ class JulesOptionsFlowHandler(OptionsFlow):
                     CONF_DEFAULT_BRANCH,
                     default=self.config_entry.options.get(CONF_DEFAULT_BRANCH, "main"),
                 ): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
+                vol.Optional(
+                    CONF_ACCOUNT_PLAN,
+                    default=self.config_entry.options.get(
+                        CONF_ACCOUNT_PLAN,
+                        self.config_entry.data.get(
+                            CONF_ACCOUNT_PLAN, DEFAULT_ACCOUNT_PLAN
+                        ),
+                    ),
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=[
+                            SelectOptionDict(value=k, label=k) for k in ACCOUNT_PLANS
+                        ],
+                        mode=SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional(
+                    CONF_DAILY_QUOTA,
+                    default=self.config_entry.options.get(
+                        CONF_DAILY_QUOTA,
+                        self.config_entry.data.get(
+                            CONF_DAILY_QUOTA, DEFAULT_DAILY_QUOTA
+                        ),
+                    ),
+                ): NumberSelector(
+                    NumberSelectorConfig(
+                        min=1,
+                        max=5000,
+                        step=1,
+                        mode=NumberSelectorMode.BOX,
+                    )
+                ),
             }
         )
 

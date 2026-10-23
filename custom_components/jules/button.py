@@ -6,7 +6,6 @@ from homeassistant.components.button import ButtonEntity, ButtonEntityDescriptio
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -14,11 +13,13 @@ from .client import JulesClient
 from .const import (
     DATA_CLIENT,
     DATA_COORDINATOR,
-    DEFAULT_NAME,
     DOMAIN,
     STATE_AWAITING_APPROVAL,
+    STATE_AWAITING_PLAN_APPROVAL,
+    STATE_AWAITING_USER_FEEDBACK,
 )
 from .coordinator import JulesDataUpdateCoordinator
+from .helpers import get_device_info
 
 
 async def async_setup_entry(
@@ -56,14 +57,7 @@ class JulesRefreshButton(CoordinatorEntity[JulesDataUpdateCoordinator], ButtonEn
         self._attr_unique_id = f"{entry.entry_id}_refresh"
         self._attr_has_entity_name = True
 
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            name=entry.title or DEFAULT_NAME,
-            manufacturer="Google",
-            model="Jules AI Coding Agent",
-            sw_version="2026.10.0",
-            configuration_url="https://jules.google",
-        )
+        self._attr_device_info = get_device_info(entry)
 
     async def async_press(self) -> None:
         """Handle the button press."""
@@ -91,15 +85,7 @@ class JulesApprovePlanButton(
         )
         self._attr_unique_id = f"{entry.entry_id}_approve_latest_plan"
         self._attr_has_entity_name = True
-
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            name=entry.title or DEFAULT_NAME,
-            manufacturer="Google",
-            model="Jules AI Coding Agent",
-            sw_version="2026.10.0",
-            configuration_url="https://jules.google",
-        )
+        self._attr_device_info = get_device_info(entry)
 
     async def async_press(self) -> None:
         """Handle the button press."""
@@ -107,7 +93,12 @@ class JulesApprovePlanButton(
         pending_session: str | None = None
 
         for s in sessions:
-            if (s.get("state") or "").upper() == STATE_AWAITING_APPROVAL:
+            st = (s.get("state") or "").upper()
+            if st in (
+                STATE_AWAITING_APPROVAL,
+                STATE_AWAITING_PLAN_APPROVAL,
+                STATE_AWAITING_USER_FEEDBACK,
+            ):
                 pending_session = s.get("name") or s.get("id")
                 break
 

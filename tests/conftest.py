@@ -208,13 +208,31 @@ class MockConfigFlow:
     def async_abort(self, *, reason: str) -> dict[str, Any]:
         return {"type": "abort", "reason": reason}
 
+    def async_update_reload_and_abort(
+        self,
+        entry: Any,
+        *,
+        data: dict[str, Any] | None = None,
+        options: dict[str, Any] | None = None,
+        reason: str = "reconfigure_successful",
+    ) -> dict[str, Any]:
+        return {"type": "abort", "reason": reason}
+
 
 class MockOptionsFlow:
     """Mock OptionsFlow."""
 
     def __init__(self, config_entry: Any = None) -> None:
-        self.config_entry = config_entry
+        self._config_entry = config_entry
         self.hass: Any = None
+
+    @property
+    def config_entry(self) -> Any:
+        return self._config_entry
+
+    @config_entry.setter
+    def config_entry(self, value: Any) -> None:
+        self._config_entry = value
 
     def async_show_form(
         self,
@@ -255,8 +273,37 @@ mock_submodule("homeassistant.components.binary_sensor")
 mock_submodule("homeassistant.components.button")
 mock_submodule("homeassistant.components.diagnostics")
 mock_submodule("homeassistant.components.conversation")
+mock_submodule("homeassistant.components.repairs")
+mock_submodule("homeassistant.components.event")
+mock_submodule("homeassistant.components.image")
+mock_submodule("homeassistant.components.select")
+mock_submodule("homeassistant.components.switch")
 mock_submodule("homeassistant.helpers.device_registry")
 mock_submodule("homeassistant.helpers.entity_registry")
+mock_submodule("homeassistant.helpers.issue_registry")
+
+# Setup repairs mocks
+repairs_mod = sys.modules["homeassistant.components.repairs"]
+repairs_mod.RepairsFlow = MockConfigFlow
+repairs_mod.RepairsFlowResult = dict
+
+ir_mod = sys.modules["homeassistant.helpers.issue_registry"]
+ir_mod.IssueSeverity = types.SimpleNamespace(ERROR="error", WARNING="warning")
+ir_mod.async_create_issue = MagicMock()
+ir_mod.async_delete_issue = MagicMock()
+
+# Setup event, image, select, switch mocks
+event_mod = sys.modules["homeassistant.components.event"]
+event_mod.EventEntity = MockEntity
+
+image_mod = sys.modules["homeassistant.components.image"]
+image_mod.ImageEntity = MockEntity
+
+select_mod = sys.modules["homeassistant.components.select"]
+select_mod.SelectEntity = MockEntity
+
+switch_mod = sys.modules["homeassistant.components.switch"]
+switch_mod.SwitchEntity = MockEntity
 
 # Assign standard attributes
 ha_const = sys.modules["homeassistant.const"]
@@ -267,6 +314,10 @@ ha_const.Platform = types.SimpleNamespace(
     STT="stt",
     BINARY_SENSOR="binary_sensor",
     BUTTON="button",
+    SWITCH="switch",
+    SELECT="select",
+    EVENT="event",
+    IMAGE="image",
 )
 ha_const.CONF_NAME = "name"
 ha_const.EntityCategory = types.SimpleNamespace(
@@ -457,10 +508,10 @@ conv_module.ConversationResult = MockConversationResult
 class MockIntentResponse:
     def __init__(self, language: str = "en") -> None:
         self.language = language
-        self.speech: str | None = None
+        self.speech: dict[str, Any] = {}
 
     def async_set_speech(self, speech: str) -> None:
-        self.speech = speech
+        self.speech = {"plain": {"speech": speech}}
 
 
 conv_module.intent = types.SimpleNamespace(IntentResponse=MockIntentResponse)
@@ -540,3 +591,46 @@ def mock_config_entry() -> MagicMock:
     entry.async_on_unload = MagicMock()
     entry.add_update_listener = MagicMock()
     return entry
+
+
+@pytest.fixture
+def mock_client() -> MagicMock:
+    """Mock JulesClient fixture."""
+    client = MagicMock()
+    client.async_get_sessions = AsyncMock(return_value=[])
+    client.async_get_sources = AsyncMock(return_value=[])
+    client.async_check_health = AsyncMock(return_value={"status": "healthy"})
+    client.async_get_models = AsyncMock(return_value=["coding-cascade", "chat-cascade"])
+    client.async_approve_plan = AsyncMock()
+    client.async_send_reply = AsyncMock()
+    client.async_cancel_session = AsyncMock()
+    client.async_create_session = AsyncMock()
+    client.async_execute_ai_task = AsyncMock(
+        return_value={"status": "completed", "output": "Done"}
+    )
+    client.async_chat = AsyncMock(return_value={"response": "Hello"})
+    client.compression_enabled = True
+    return client
+
+
+@pytest.fixture
+def mock_coordinator(mock_config_entry: MagicMock) -> MagicMock:
+    """Mock JulesDataUpdateCoordinator fixture."""
+    coordinator = MagicMock()
+    coordinator.last_update_success = True
+    coordinator.config_entry = mock_config_entry
+    coordinator.data = {
+        "sessions": [],
+        "total_sessions": 0,
+        "active_sessions": 0,
+        "awaiting_approval": 0,
+        "completed_sessions": 0,
+        "failed_sessions": 0,
+        "latest_session": None,
+        "sources": [],
+        "models": ["coding-cascade", "chat-cascade"],
+        "healthy": True,
+        "response_time_ms": 120,
+    }
+    coordinator.async_request_refresh = AsyncMock()
+    return coordinator

@@ -45,19 +45,28 @@ With **ha-jules**, you bring your autonomous coding workflow directly into your 
   - **Agent Active (`running`)**: Turns on whenever Jules is actively researching or writing code.
   - **Action Required (`problem`)**: Alerts you immediately if a plan requires approval or an action failed.
 
-- **🎛️ Actionable Button Entities**:
-  - **Refresh Data**: Instantly force a synchronization with the Jules API.
-  - **Approve Latest Plan**: One-click approval from your dashboard to let Jules proceed without switching apps.
+- **💬 Voice & Chat Assistant (Assist / `conversation`)**:
+  - Full Home Assistant Assist integration powered by Jules & OmniRoute models (`coding-cascade`, `chat-cascade`, `fast-cascade`).
+  - Supports intent processing and device control via native Home Assistant LLM tools.
+  - Can dispatch autonomous GitHub coding sessions directly via voice command or chat dialog.
 
-- **🔔 Event-Driven Automations**:
-  - Fires native Home Assistant bus events on state transitions:
-    - `jules_session_completed` (includes PR URL and title)
-    - `jules_plan_awaiting_approval` (includes plan summary)
-    - `jules_session_failed` (includes error reason)
+- **🧠 AI Task Engine (`ai_task`)**:
+  - Dedicated AI Task entity providing smart home reasoning, log analysis, and automated code generation.
+  - Exposes performance metrics: latency tracking, execution counters, model used, and last execution timestamp.
 
-- **🌐 Flexible Connection Architecture**:
-  - **Direct Google API**: Connect directly to `https://jules.googleapis.com/v1alpha` using your Google Jules API key (`x-goog-api-key`).
-  - **OmniRoute / Gateway Proxy**: Seamlessly route through an OmniRoute proxy (`http://omniroute:20128/v1` or server URL) with Bearer token authentication.
+- **🎚️ Dynamic Select & Switch Entities**:
+  - **Active Model / Cascade Select**: Change active LLM models on-the-fly (`coding-cascade`, `fast-cascade`, `chat-cascade`, `gemini-2.5-pro`, `gemini-2.5-flash`).
+  - **Active Target Repository Select**: Pick target GitHub repository dynamically from discovered authorized sources.
+  - **Default Branch Select**: Switch base working branch (`main`, `master`, `develop`).
+  - **Auto-Approve Plans Switch**: Toggle automatic plan approvals from your dashboard.
+  - **Token Compression Switch**: Enable/disable prompt token compression for optimized token usage.
+
+- **🧰 Powerful Smart Home AI Services**:
+  - `jules.execute_ai_task`: Execute custom reasoning, code generation, or analysis prompts.
+  - `jules.analyze_automation`: Inspect existing automations, diagnose race conditions and bugs, and receive optimized YAML.
+  - `jules.suggest_automations`: Scan smart devices in your home and generate 3 tailored YAML automations.
+  - `jules.diagnose_logs`: Review recent Home Assistant error logs, diagnose root causes, and get step-by-step fix recommendations.
+  - `jules.analyze_camera`: Snapshot security cameras and run computer vision scene analysis.
 
 - **🔍 Diagnostic & Privacy Redaction**:
   - Full Home Assistant UI Diagnostic download support with all API keys, bearer tokens, and secrets automatically redacted.

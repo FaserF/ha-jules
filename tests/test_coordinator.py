@@ -14,6 +14,8 @@ def mock_client():
     client.async_get_sessions = AsyncMock()
     client.async_get_sources = AsyncMock()
     client.async_approve_plan = AsyncMock()
+    client.async_check_health = AsyncMock(return_value={"status": "healthy"})
+    client.async_get_models = AsyncMock(return_value=["coding-cascade"])
     return client
 
 
@@ -72,7 +74,9 @@ async def test_coordinator_state_transition_events(
     ]
     mock_client.async_get_sources.return_value = []
     await coordinator._async_update_data()
-    hass.bus.async_fire.assert_not_called()
+    hass.bus.async_fire.assert_called_once()
+    assert hass.bus.async_fire.call_args[0][0] == "jules_session_started"
+    hass.bus.async_fire.reset_mock()
 
     # Second update: transitioned to COMPLETED
     mock_client.async_get_sessions.return_value = [

@@ -64,21 +64,39 @@ approve_plan:
       selector:
         text: {}
 
+cancel_session:
+  name: Cancel Session
+  description: Cancel or stop an active or stuck Jules coding session.
+  fields:
+    session_id:
+      name: Session ID
+      description: ID of the session to cancel (defaults to the most recent active session).
+      example: "sessions/12345678"
+      required: false
+      selector:
+        text: {}
+    entry_id:
+      name: Config Entry ID
+      description: Optional entry ID if multiple Jules accounts are configured.
+      required: false
+      selector:
+        text: {}
+
 send_message:
   name: Send Message
-  description: Send a feedback instruction or follow-up prompt to a running session.
+  description: Send guidance, follow-up instructions, or feedback to a running session.
   fields:
     message:
       name: Message
-      description: Feedback or instruction for Jules.
-      example: "Please also check if the error is logged to debug output."
+      description: Text message or instruction to deliver to the agent session.
+      example: "Please also check if any linter warnings are raised."
       required: true
       selector:
         text:
           multiline: true
     session_id:
       name: Session ID
-      description: Target session ID (defaults to latest active session).
+      description: Target session ID (defaults to the latest session).
       example: "sessions/12345678"
       required: false
       selector:
@@ -91,8 +109,8 @@ send_message:
         text: {}
 
 refresh_sessions:
-  name: Refresh Sessions
-  description: Force an immediate refresh of all Jules sessions and connected repositories.
+  name: Refresh Data
+  description: Manually trigger an immediate update of all Jules sessions and repository sources.
   fields:
     entry_id:
       name: Config Entry ID
@@ -100,3 +118,414 @@ refresh_sessions:
       required: false
       selector:
         text: {}
+
+execute_ai_task:
+  name: Execute AI Task
+  description: Execute arbitrary reasoning, code generation, or analysis through Jules and OmniRoute models.
+  fields:
+    prompt:
+      name: Prompt
+      description: Input prompt for reasoning or generation.
+      example: "Explain how Home Assistant event listeners work and give a python example."
+      required: true
+      selector:
+        text:
+          multiline: true
+    model:
+      name: Model / Cascade
+      description: Target model or cascade (e.g. coding-cascade, fast-cascade).
+      example: "coding-cascade"
+      required: false
+      selector:
+        text: {}
+    system_prompt:
+      name: System Prompt
+      description: Custom system instruction override.
+      required: false
+      selector:
+        text:
+          multiline: true
+    temperature:
+      name: Temperature
+      description: Sampling temperature (0.0 to 1.0).
+      default: 0.2
+      required: false
+      selector:
+        number:
+          min: 0.0
+          max: 1.0
+          step: 0.1
+    max_tokens:
+      name: Max Tokens
+      description: Maximum output tokens.
+      default: 2048
+      required: false
+      selector:
+        number:
+          min: 100
+          max: 8192
+          step: 100
+
+analyze_automation:
+  name: Analyze Automation
+  description: Review a Home Assistant automation, diagnose bugs or race conditions, and recommend optimizations and fixed YAML.
+  fields:
+    automation_entity_id:
+      name: Automation Entity
+      description: Entity ID of an existing automation to inspect.
+      example: "automation.turn_off_lights_when_leaving"
+      required: false
+      selector:
+        entity:
+          domain: automation
+    automation_yaml:
+      name: Raw Automation YAML
+      description: Alternative raw YAML to analyze.
+      required: false
+      selector:
+        text:
+          multiline: true
+    custom_prompt:
+      name: Custom Instructions
+      description: Additional goals or constraints for the analysis.
+      required: false
+      selector:
+        text:
+          multiline: true
+    model:
+      name: Model
+      description: Model to perform analysis.
+      default: "coding-cascade"
+      required: false
+      selector:
+        text: {}
+
+suggest_automations:
+  name: Suggest Automations
+  description: Scan connected smart home entities and generate tailored YAML automations.
+  fields:
+    domains:
+      name: Target Domains
+      description: List of entity domains to consider (e.g. light, climate, binary_sensor).
+      required: false
+      selector:
+        select:
+          multiple: true
+          options:
+            - light
+            - switch
+            - climate
+            - binary_sensor
+            - sensor
+            - cover
+            - media_player
+    entity_limit:
+      name: Entity Limit
+      description: Maximum number of devices to analyze.
+      default: 30
+      required: false
+      selector:
+        number:
+          min: 5
+          max: 100
+    custom_prompt:
+      name: Desired Focus
+      description: Custom user preference or room focus.
+      example: "Focus on saving energy in the living room and bedtime routines."
+      required: false
+      selector:
+        text:
+          multiline: true
+    send_notification:
+      name: Send Persistent Notification
+      description: Post suggestions to Home Assistant notification drawer.
+      default: true
+      required: false
+      selector:
+        boolean: {}
+
+diagnose_logs:
+  name: Diagnose Error Logs
+  description: Analyze Home Assistant error logs, diagnose root causes, and provide step-by-step fix recommendations.
+  fields:
+    log_text:
+      name: Log Excerpt
+      description: Optional raw error log snippet to diagnose.
+      required: false
+      selector:
+        text:
+          multiline: true
+    hours_back:
+      name: Hours Back
+      description: Hours of recent errors to analyze if no log text is provided.
+      default: 2
+      required: false
+      selector:
+        number:
+          min: 1
+          max: 24
+    custom_prompt:
+      name: Custom Context
+      description: Additional details about when the error occurred.
+      required: false
+      selector:
+        text:
+          multiline: true
+
+analyze_camera:
+  name: Analyze Camera
+  description: Capture a live snapshot from a security camera and perform computer vision scene analysis.
+  fields:
+    camera_entity_id:
+      name: Camera Entity
+      description: Target camera to capture frame from.
+      example: "camera.front_door"
+      required: true
+      selector:
+        entity:
+          domain: camera
+    prompt:
+      name: Vision Prompt
+      description: Question or instruction for image inspection.
+      default: "Describe what you see in this security camera snapshot in detail, highlighting any people, activity, or risks."
+      required: false
+      selector:
+        text:
+          multiline: true
+    model:
+      name: Vision Model
+      description: Target vision model.
+      default: "coding-cascade"
+      required: false
+      selector:
+        text: {}
+
+list_sessions:
+  name: List Sessions
+  description: List recent Jules coding sessions with status, prompt, and PR details matching @google/jules-mcp.
+  fields:
+    page_size:
+      name: Page Size
+      description: Maximum number of recent sessions to retrieve.
+      default: 10
+      required: false
+      selector:
+        number:
+          min: 1
+          max: 50
+    entry_id:
+      name: Config Entry ID
+      description: Optional entry ID if multiple Jules accounts are configured.
+      required: false
+      selector:
+        text: {}
+
+get_session_state:
+  name: Get Session State
+  description: Get the operational status ('busy', 'stable', 'failed') and state of a Jules session matching @google/jules-mcp.
+  fields:
+    session_id:
+      name: Session ID
+      description: Target session ID (defaults to the latest session).
+      example: "17714408721739868450"
+      required: false
+      selector:
+        text: {}
+    entry_id:
+      name: Config Entry ID
+      description: Optional entry ID if multiple Jules accounts are configured.
+      required: false
+      selector:
+        text: {}
+
+get_bash_outputs:
+  name: Get Bash Outputs
+  description: Retrieve commands executed by Jules in the container, including stdout, stderr, and exit codes matching @google/jules-mcp.
+  fields:
+    session_id:
+      name: Session ID
+      description: Target session ID (defaults to the latest session).
+      example: "17714408721739868450"
+      required: false
+      selector:
+        text: {}
+    activity_ids:
+      name: Activity IDs
+      description: Optional list of activity IDs to filter bash outputs.
+      required: false
+      selector:
+        object: {}
+    entry_id:
+      name: Config Entry ID
+      description: Optional entry ID if multiple Jules accounts are configured.
+      required: false
+      selector:
+        text: {}
+
+get_code_review_context:
+  name: Get Code Review Context
+  description: Review code changes and file additions/deletions from a Jules session matching @google/jules-mcp.
+  fields:
+    session_id:
+      name: Session ID
+      description: Target session ID (defaults to the latest session).
+      example: "17714408721739868450"
+      required: false
+      selector:
+        text: {}
+    format:
+      name: Format
+      description: Output format (markdown, summary, tree, detailed).
+      default: "markdown"
+      required: false
+      selector:
+        select:
+          options:
+            - "markdown"
+            - "summary"
+            - "tree"
+            - "detailed"
+    filter:
+      name: Change Filter
+      description: Filter by file change type (all, created, modified, deleted).
+      default: "all"
+      required: false
+      selector:
+        select:
+          options:
+            - "all"
+            - "created"
+            - "modified"
+            - "deleted"
+    detail:
+      name: Detail Level
+      description: Level of detail (minimal, standard, full).
+      default: "standard"
+      required: false
+      selector:
+        select:
+          options:
+            - "minimal"
+            - "standard"
+            - "full"
+    activity_id:
+      name: Activity ID
+      description: Optional activity ID to review changes from a single activity.
+      required: false
+      selector:
+        text: {}
+    entry_id:
+      name: Config Entry ID
+      description: Optional entry ID if multiple Jules accounts are configured.
+      required: false
+      selector:
+        text: {}
+
+show_code_diff:
+  name: Show Code Diff
+  description: Retrieve the unified git patch diff from a Jules session matching @google/jules-mcp.
+  fields:
+    session_id:
+      name: Session ID
+      description: Target session ID (defaults to the latest session).
+      example: "17714408721739868450"
+      required: false
+      selector:
+        text: {}
+    file:
+      name: File Path
+      description: Specific file path to extract diff for (leave empty for full diff).
+      example: "custom_components/jules/client.py"
+      required: false
+      selector:
+        text: {}
+    activity_id:
+      name: Activity ID
+      description: Optional activity ID to extract diff from.
+      required: false
+      selector:
+        text: {}
+    entry_id:
+      name: Config Entry ID
+      description: Optional entry ID if multiple Jules accounts are configured.
+      required: false
+      selector:
+        text: {}
+
+send_reply:
+  name: Send Reply to Session
+  description: Send a message or approve a plan in an active Jules session matching @google/jules-mcp.
+  fields:
+    session_id:
+      name: Session ID
+      description: Target session ID (defaults to the latest session).
+      example: "17714408721739868450"
+      required: false
+      selector:
+        text: {}
+    action:
+      name: Action
+      description: Action to perform ('send' for fire-and-forget, 'ask' to wait for reply, 'approve' to approve plan).
+      default: "send"
+      required: true
+      selector:
+        select:
+          options:
+            - "send"
+            - "ask"
+            - "approve"
+    message:
+      name: Message
+      description: Message content to send (required for 'send' and 'ask').
+      required: false
+      selector:
+        text:
+          multiline: true
+    plan_id:
+      name: Plan ID
+      description: Optional plan ID when approving a plan.
+      required: false
+      selector:
+        text: {}
+    entry_id:
+      name: Config Entry ID
+      description: Optional entry ID if multiple Jules accounts are configured.
+      required: false
+      selector:
+        text: {}
+
+get_session_activities:
+  name: Get Session Activities
+  description: Fetch the complete timeline of thought activities, plans, bash outputs, and messages for a Jules coding session.
+  fields:
+    session_id:
+      name: Session ID
+      description: Target session ID (defaults to latest active or completed session).
+      example: "17714408721739868450"
+      required: false
+      selector:
+        text: {}
+    entry_id:
+      name: Config Entry ID
+      description: Optional entry ID if multiple Jules accounts are configured.
+      required: false
+      selector:
+        text: {}
+
+get_fleet_status:
+  name: Get Fleet Status
+  description: Aggregate quota, usage, and status across all configured Jules accounts and identify the recommended account with the most remaining quota.
+  fields: {}
+
+sync_sources:
+  name: Sync Sources
+  description: Refresh authorized GitHub repositories and sources for one or all Jules accounts.
+  fields:
+    entry_id:
+      name: Config Entry ID
+      description: Optional entry ID to sync (defaults to all configured accounts).
+      required: false
+      selector:
+        text: {}
+
+

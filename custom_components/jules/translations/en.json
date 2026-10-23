@@ -7,6 +7,7 @@
         "data": {
           "api_key": "API Key",
           "api_url": "API Base URL",
+          "account_plan": "Account Plan Tier",
           "default_source": "Default Repository (e.g. FaserF/ha-jules)",
           "auto_approve": "Auto-Approve Proposed Plans"
         }
@@ -17,6 +18,7 @@
         "data": {
           "api_key": "API Key",
           "api_url": "API Base URL",
+          "account_plan": "Account Plan Tier",
           "default_source": "Default Repository",
           "auto_approve": "Auto-Approve Proposed Plans"
         }
@@ -35,12 +37,19 @@
     "step": {
       "init": {
         "title": "Google Jules Options",
-        "description": "Configure polling rates and default workflow behavior.",
+        "description": "Configure polling rates, AI models, conversation persona, and default workflow behavior.",
         "data": {
+          "chat_model": "Conversation Chat Model / Cascade",
+          "ai_task_model": "AI Task Model",
+          "prompt": "Conversation System Prompt",
+          "temperature": "Model Temperature",
+          "max_tokens": "Maximum Generation Tokens",
           "scan_interval": "Polling Interval (seconds)",
           "auto_approve": "Auto-Approve Proposed Plans",
           "default_source": "Default Repository",
-          "default_branch": "Default Branch"
+          "default_branch": "Default Branch",
+          "account_plan": "Account Plan Tier",
+          "daily_quota": "Daily Session Quota"
         }
       }
     }
@@ -67,6 +76,21 @@
       },
       "latest_session": {
         "name": "Latest Session"
+      },
+      "quota_remaining": {
+        "name": "Daily Quota Remaining"
+      },
+      "account_plan": {
+        "name": "Account Plan"
+      },
+      "sessions_today": {
+        "name": "Sessions Dispatched Today"
+      },
+      "success_rate": {
+        "name": "Session Success Rate"
+      },
+      "latest_pull_request": {
+        "name": "Latest Pull Request"
       }
     },
     "binary_sensor": {
@@ -78,6 +102,12 @@
       },
       "action_required": {
         "name": "Action Required"
+      },
+      "quota_exceeded": {
+        "name": "Daily Quota Exceeded"
+      },
+      "pr_ready": {
+        "name": "Pull Request Ready"
       }
     },
     "button": {
@@ -86,6 +116,56 @@
       },
       "approve_latest_plan": {
         "name": "Approve Latest Plan"
+      }
+    },
+    "conversation": {
+      "assist": {
+        "name": "Assist"
+      }
+    },
+    "ai_task": {
+      "task_engine": {
+        "name": "Task Engine"
+      }
+    },
+    "switch": {
+      "auto_approve": {
+        "name": "Auto-Approve Plans"
+      },
+      "token_compression": {
+        "name": "Token Compression"
+      }
+    },
+    "select": {
+      "active_model": {
+        "name": "Active Model"
+      },
+      "active_repository": {
+        "name": "Active Repository"
+      },
+      "default_branch": {
+        "name": "Default Branch"
+      }
+    },
+    "image": {
+      "latest_analyzed_image": {
+        "name": "Latest Analyzed Image"
+      }
+    },
+    "event": {
+      "session_event": {
+        "name": "Session Event",
+        "state_attributes": {
+          "event_type": {
+            "name": "Event type",
+            "state": {
+              "session_started": "Session started",
+              "plan_awaiting_approval": "Plan awaiting approval",
+              "session_completed": "Session completed",
+              "session_failed": "Session failed"
+            }
+          }
+        }
       }
     }
   },
@@ -134,6 +214,20 @@
         }
       }
     },
+    "cancel_session": {
+      "name": "Cancel Session",
+      "description": "Cancel or stop an active or stuck Jules coding session.",
+      "fields": {
+        "session_id": {
+          "name": "Session ID",
+          "description": "ID of the session to cancel (defaults to latest active session)."
+        },
+        "entry_id": {
+          "name": "Config Entry ID",
+          "description": "Target config entry ID."
+        }
+      }
+    },
     "send_message": {
       "name": "Send Message",
       "description": "Send a feedback instruction or follow-up prompt to a running session.",
@@ -161,6 +255,262 @@
           "description": "Target config entry ID."
         }
       }
+    },
+    "execute_ai_task": {
+      "name": "Execute AI Task",
+      "description": "Execute arbitrary reasoning, code generation, or analysis through Jules and OmniRoute models.",
+      "fields": {
+        "prompt": {
+          "name": "Prompt",
+          "description": "Input prompt for reasoning or generation."
+        },
+        "model": {
+          "name": "Model / Cascade",
+          "description": "Target model or cascade."
+        },
+        "system_prompt": {
+          "name": "System Prompt",
+          "description": "Custom system instruction override."
+        },
+        "temperature": {
+          "name": "Temperature",
+          "description": "Sampling temperature (0.0 to 1.0)."
+        },
+        "max_tokens": {
+          "name": "Max Tokens",
+          "description": "Maximum generation tokens."
+        }
+      }
+    },
+    "analyze_automation": {
+      "name": "Analyze Automation",
+      "description": "Review a Home Assistant automation, diagnose bugs or race conditions, and recommend optimizations and fixed YAML.",
+      "fields": {
+        "automation_entity_id": {
+          "name": "Automation Entity",
+          "description": "Entity ID of an existing automation to inspect."
+        },
+        "automation_yaml": {
+          "name": "Raw Automation YAML",
+          "description": "Alternative raw YAML to analyze."
+        },
+        "custom_prompt": {
+          "name": "Custom Instructions",
+          "description": "Additional goals or constraints for the analysis."
+        },
+        "model": {
+          "name": "Model",
+          "description": "Target model for analysis."
+        }
+      }
+    },
+    "suggest_automations": {
+      "name": "Suggest Automations",
+      "description": "Scan connected smart home entities and generate tailored YAML automations.",
+      "fields": {
+        "domains": {
+          "name": "Target Domains",
+          "description": "List of entity domains to consider."
+        },
+        "entity_limit": {
+          "name": "Entity Limit",
+          "description": "Maximum number of devices to analyze."
+        },
+        "custom_prompt": {
+          "name": "Desired Focus",
+          "description": "Custom user preference or room focus."
+        },
+        "send_notification": {
+          "name": "Send Persistent Notification",
+          "description": "Post suggestions to notification drawer."
+        }
+      }
+    },
+    "diagnose_logs": {
+      "name": "Diagnose Error Logs",
+      "description": "Analyze Home Assistant error logs, diagnose root causes, and provide step-by-step fix recommendations.",
+      "fields": {
+        "log_text": {
+          "name": "Log Excerpt",
+          "description": "Optional raw error log snippet to diagnose."
+        },
+        "hours_back": {
+          "name": "Hours Back",
+          "description": "Hours of recent errors to analyze."
+        },
+        "custom_prompt": {
+          "name": "Custom Context",
+          "description": "Additional details about when the error occurred."
+        }
+      }
+    },
+    "analyze_camera": {
+      "name": "Analyze Camera",
+      "description": "Capture a live snapshot from a security camera and perform computer vision scene analysis.",
+      "fields": {
+        "camera_entity_id": {
+          "name": "Camera Entity",
+          "description": "Target camera to capture frame from."
+        },
+        "prompt": {
+          "name": "Vision Prompt",
+          "description": "Question or instruction for image inspection."
+        },
+        "model": {
+          "name": "Vision Model",
+          "description": "Target vision model."
+        }
+      }
+    },
+    "list_sessions": {
+      "name": "List Sessions",
+      "description": "List recent Google Jules coding sessions with status, activities, and metadata.",
+      "fields": {
+        "page_size": {
+          "name": "Page Size",
+          "description": "Maximum number of sessions to return."
+        },
+        "page_token": {
+          "name": "Page Token",
+          "description": "Token for pagination."
+        },
+        "filter": {
+          "name": "Filter Expression",
+          "description": "Optional filter expression."
+        },
+        "entry_id": {
+          "name": "Config Entry ID",
+          "description": "Target config entry ID."
+        }
+      }
+    },
+    "get_session_state": {
+      "name": "Get Session State",
+      "description": "Retrieve the comprehensive state and dashboard overview for a Jules session.",
+      "fields": {
+        "session_id": {
+          "name": "Session ID",
+          "description": "ID of the Jules session."
+        },
+        "entry_id": {
+          "name": "Config Entry ID",
+          "description": "Target config entry ID."
+        }
+      }
+    },
+    "get_bash_outputs": {
+      "name": "Get Bash Outputs",
+      "description": "Retrieve terminal commands, output logs, and execution summaries executed by Jules.",
+      "fields": {
+        "session_id": {
+          "name": "Session ID",
+          "description": "ID of the Jules session."
+        },
+        "entry_id": {
+          "name": "Config Entry ID",
+          "description": "Target config entry ID."
+        }
+      }
+    },
+    "get_code_review_context": {
+      "name": "Get Code Review Context",
+      "description": "Retrieve a structured code review summary including changed files, diff stats, and insights.",
+      "fields": {
+        "session_id": {
+          "name": "Session ID",
+          "description": "ID of the Jules session."
+        },
+        "entry_id": {
+          "name": "Config Entry ID",
+          "description": "Target config entry ID."
+        }
+      }
+    },
+    "show_code_diff": {
+      "name": "Show Code Diff",
+      "description": "Retrieve unified git diff patches produced during a Jules session, optionally filtered by file or activity.",
+      "fields": {
+        "session_id": {
+          "name": "Session ID",
+          "description": "ID of the Jules session."
+        },
+        "file": {
+          "name": "File Filter",
+          "description": "Optional file path to filter git diff patch."
+        },
+        "activity_id": {
+          "name": "Activity ID",
+          "description": "Optional activity ID to inspect patch for."
+        },
+        "entry_id": {
+          "name": "Config Entry ID",
+          "description": "Target config entry ID."
+        }
+      }
+    },
+    "send_reply": {
+      "name": "Send Reply",
+      "description": "Send a reply to an active Jules session to approve a plan, send feedback, or ask a question.",
+      "fields": {
+        "session_id": {
+          "name": "Session ID",
+          "description": "Target session ID."
+        },
+        "action": {
+          "name": "Action",
+          "description": "Action type: approve, send, or ask."
+        },
+        "message": {
+          "name": "Message",
+          "description": "Message or clarification text."
+        },
+        "plan_id": {
+          "name": "Plan ID",
+          "description": "Optional plan ID to approve."
+        },
+        "entry_id": {
+          "name": "Config Entry ID",
+          "description": "Target config entry ID."
+        }
+      }
+    },
+    "get_session_activities": {
+      "name": "Get Session Activities",
+      "description": "Fetch the timeline of thought, plan, and command activities for a Jules coding session.",
+      "fields": {
+        "session_id": {
+          "name": "Session ID",
+          "description": "ID of the session (defaults to latest)."
+        },
+        "entry_id": {
+          "name": "Config Entry ID",
+          "description": "Target config entry ID."
+        }
+      }
+    },
+    "get_fleet_status": {
+      "name": "Get Fleet Status",
+      "description": "Aggregate quota, usage, and status across all configured Jules accounts and identify the recommended account with the most remaining quota."
+    },
+    "sync_sources": {
+      "name": "Sync Sources",
+      "description": "Refresh authorized repositories and sources for one or all Jules accounts.",
+      "fields": {
+        "entry_id": {
+          "name": "Config Entry ID",
+          "description": "Optional entry ID to sync (defaults to all configured accounts)."
+        }
+      }
+    }
+  },
+  "issues": {
+    "auth_failed": {
+      "title": "Google Jules Authentication Failed",
+      "description": "Authentication to the Jules API at {api_url} failed. Please verify your API key or reconfigure the integration."
+    },
+    "cannot_connect": {
+      "title": "Cannot Connect to Google Jules",
+      "description": "Failed to connect to the Jules API endpoint at {api_url}: {error}"
     }
   }
 }

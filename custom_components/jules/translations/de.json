@@ -3,29 +3,31 @@
     "step": {
       "user": {
         "title": "Google Jules Konfiguration",
-        "description": "Verbinde Home Assistant mit der Google Jules API oder deinem OmniRoute AI-Gateway Proxy.",
+        "description": "Verbinde mit der Google Jules API oder deinem lokalen OmniRoute AI Gateway Proxy.",
         "data": {
           "api_key": "API-Schlüssel",
           "api_url": "API-Basis-URL",
-          "default_source": "Standard-Repository (z.B. FaserF/ha-jules)",
-          "auto_approve": "Vorgeschlagene Ausführungspläne automatisch genehmigen"
+          "account_plan": "Konto-Abonnement (Plan)",
+          "default_source": "Standard-Repository (z. B. FaserF/ha-jules)",
+          "auto_approve": "Vorgeschlagene Pläne automatisch genehmigen"
         }
       },
       "reconfigure_confirm": {
         "title": "Google Jules neu konfigurieren",
-        "description": "Aktualisiere Zugangsdaten oder Endpunkt für Google Jules.",
+        "description": "Zugangsdaten oder API-Endpunkt für Google Jules aktualisieren.",
         "data": {
           "api_key": "API-Schlüssel",
           "api_url": "API-Basis-URL",
+          "account_plan": "Konto-Abonnement (Plan)",
           "default_source": "Standard-Repository",
-          "auto_approve": "Vorgeschlagene Ausführungspläne automatisch genehmigen"
+          "auto_approve": "Vorgeschlagene Pläne automatisch genehmigen"
         }
       }
     },
     "error": {
       "cannot_connect": "Verbindung zum Jules-Endpunkt fehlgeschlagen. Bitte URL und Netzwerk prüfen.",
       "invalid_auth": "Ungültiger API-Schlüssel oder Autorisierungs-Token.",
-      "unknown": "Unerwarteter Fehler beim Verbindungstest."
+      "unknown": "Unerwarteter Fehler beim Verbindungstest aufgetreten."
     },
     "abort": {
       "already_configured": "Dieses Jules-Konto bzw. dieser Endpunkt ist bereits eingerichtet."
@@ -35,12 +37,19 @@
     "step": {
       "init": {
         "title": "Google Jules Optionen",
-        "description": "Konfiguriere Abfrageintervalle und Standard-Workflowverhalten.",
+        "description": "Abfrageintervalle, KI-Modelle, Sprachassistenten-Prompt und Standard-Workflows konfigurieren.",
         "data": {
+          "chat_model": "Konversationsmodell / Kaskade",
+          "ai_task_model": "KI-Task-Modell",
+          "prompt": "System-Prompt für Assist",
+          "temperature": "Modell-Temperatur",
+          "max_tokens": "Maximale Antwort-Token",
           "scan_interval": "Abfrageintervall (Sekunden)",
-          "auto_approve": "Pläne automatisch genehmigen",
+          "auto_approve": "Vorgeschlagene Pläne automatisch genehmigen",
           "default_source": "Standard-Repository",
-          "default_branch": "Standard-Branch"
+          "default_branch": "Standard-Branch",
+          "account_plan": "Konto-Abonnement (Plan)",
+          "daily_quota": "Tägliches Sitzungskontingent"
         }
       }
     }
@@ -67,6 +76,21 @@
       },
       "latest_session": {
         "name": "Neueste Sitzung"
+      },
+      "quota_remaining": {
+        "name": "Verbleibendes Tageskontingent"
+      },
+      "account_plan": {
+        "name": "Konto-Abonnement"
+      },
+      "sessions_today": {
+        "name": "Heute gestartete Sitzungen"
+      },
+      "success_rate": {
+        "name": "Erfolgsquote der Sitzungen"
+      },
+      "latest_pull_request": {
+        "name": "Neuester Pull Request"
       }
     },
     "binary_sensor": {
@@ -78,6 +102,12 @@
       },
       "action_required": {
         "name": "Aktion erforderlich"
+      },
+      "quota_exceeded": {
+        "name": "Tageskontingent überschritten"
+      },
+      "pr_ready": {
+        "name": "Pull Request bereit"
       }
     },
     "button": {
@@ -87,56 +117,120 @@
       "approve_latest_plan": {
         "name": "Neuesten Plan genehmigen"
       }
+    },
+    "conversation": {
+      "assist": {
+        "name": "Assist"
+      }
+    },
+    "ai_task": {
+      "task_engine": {
+        "name": "Task-Engine"
+      }
+    },
+    "switch": {
+      "auto_approve": {
+        "name": "Pläne automatisch genehmigen"
+      },
+      "token_compression": {
+        "name": "Token-Komprimierung"
+      }
+    },
+    "select": {
+      "active_model": {
+        "name": "Aktives Modell"
+      },
+      "active_repository": {
+        "name": "Aktives Repository"
+      },
+      "default_branch": {
+        "name": "Standard-Branch"
+      }
+    },
+    "image": {
+      "latest_analyzed_image": {
+        "name": "Zuletzt analysiertes Bild"
+      }
+    },
+    "event": {
+      "session_event": {
+        "name": "Sitzungs-Ereignis",
+        "state_attributes": {
+          "event_type": {
+            "name": "Ereignistyp",
+            "state": {
+              "session_started": "Sitzung gestartet",
+              "plan_awaiting_approval": "Plan wartet auf Genehmigung",
+              "session_completed": "Sitzung abgeschlossen",
+              "session_failed": "Sitzung fehlgeschlagen"
+            }
+          }
+        }
+      }
     }
   },
   "services": {
     "create_session": {
       "name": "Sitzung erstellen",
-      "description": "Erstelle und starte eine neue asynchrone Coding-Sitzung mit Google Jules.",
+      "description": "Erstellt eine neue autonome Coding-Sitzung mit Google Jules.",
       "fields": {
         "prompt": {
-          "name": "Prompt / Aufgabe",
-          "description": "Aufgabenbeschreibung oder Fehlerbericht für Jules."
+          "name": "Prompt",
+          "description": "Aufgabenbeschreibung oder Anweisung für Jules."
         },
         "source": {
           "name": "Repository / Quelle",
-          "description": "Ziel-Repository (z.B. FaserF/ha-jules)."
+          "description": "Ziel-Repository (z. B. FaserF/ha-jules)."
         },
         "title": {
           "name": "Titel",
-          "description": "Kurzer beschreibender Titel für die Sitzung."
+          "description": "Kurztitel der Sitzung."
         },
         "branch": {
           "name": "Basis-Branch",
-          "description": "Ausgangs-Branch."
+          "description": "Basis-Branch (z. B. main)."
         },
         "auto_approve": {
           "name": "Plan automatisch genehmigen",
-          "description": "Den von Jules erstellten Plan ohne manuelle Freigabe starten."
+          "description": "Vorgeschlagenen Implementierungsplan sofort genehmigen."
         },
         "entry_id": {
-          "name": "Konfigurationseintrag-ID",
-          "description": "Optionale ID des Konfigurationseintrags."
+          "name": "Konfigurationseintrags-ID",
+          "description": "Optionale Eintrags-ID bei mehreren Konten."
         }
       }
     },
     "approve_plan": {
       "name": "Plan genehmigen",
-      "description": "Einen vorgeschlagenen Ausführungsplan für eine wartende Sitzung genehmigen.",
+      "description": "Genehmigt einen vorgeschlagenen Implementierungsplan für eine wartende Sitzung.",
       "fields": {
         "session_id": {
           "name": "Sitzungs-ID",
-          "description": "ID der freizugebenden Sitzung."
+          "description": "ID der zu genehmigenden Sitzung."
+        },
+        "entry_id": {
+          "name": "Konfigurationseintrags-ID",
+          "description": "Optionale Eintrags-ID."
+        }
+      }
+    },
+    "cancel_session": {
+      "name": "Sitzung abbrechen",
+      "description": "Bricht eine aktive oder hängende Jules-Coding-Sitzung ab.",
+      "fields": {
+        "session_id": {
+          "name": "Sitzungs-ID",
+          "description": "ID der abzubrechenden Sitzung (Standard: letzte aktive Sitzung)."
         },
         "entry_id": {
           "name": "Konfigurationseintrag-ID",
-          "description": "Optionale ID des Konfigurationseintrags."
+          "description": "Ziel-Konfigurationseintrag-ID."
         }
       }
     },
     "send_message": {
       "name": "Nachricht senden",
-      "description": "Feedback oder Anweisung an eine laufende Sitzung senden.",
+      "description": "Sendet Feedback oder Folgeanweisungen an eine laufende Sitzung.",
       "fields": {
         "message": {
           "name": "Nachricht",
@@ -147,20 +241,276 @@
           "description": "Ziel-Sitzungs-ID."
         },
         "entry_id": {
-          "name": "Konfigurationseintrag-ID",
-          "description": "Optionale ID des Konfigurationseintrags."
+          "name": "Konfigurationseintrags-ID",
+          "description": "Optionale Eintrags-ID."
         }
       }
     },
     "refresh_sessions": {
       "name": "Sitzungen aktualisieren",
-      "description": "Erzwingt eine sofortige Aktualisierung aller Jules-Sitzungen und Repositories.",
+      "description": "Erzwingt eine sofortige Aktualisierung aller Jules-Sitzungen.",
+      "fields": {
+        "entry_id": {
+          "name": "Konfigurationseintrags-ID",
+          "description": "Optionale Eintrags-ID."
+        }
+      }
+    },
+    "execute_ai_task": {
+      "name": "KI-Task ausführen",
+      "description": "Führt freie KI-Generierungs- oder Analyse-Aufgaben über Jules und OmniRoute aus.",
+      "fields": {
+        "prompt": {
+          "name": "Prompt",
+          "description": "Eingabe-Prompt für Reasoning oder Codegenerierung."
+        },
+        "model": {
+          "name": "Modell / Kaskade",
+          "description": "Zielmodell oder Kaskade (z. B. coding-cascade)."
+        },
+        "system_prompt": {
+          "name": "System-Prompt",
+          "description": "Eigene Systemanweisung."
+        },
+        "temperature": {
+          "name": "Temperatur",
+          "description": "Sampling-Temperatur (0.0 bis 1.0)."
+        },
+        "max_tokens": {
+          "name": "Max Tokens",
+          "description": "Maximale Antwort-Token."
+        }
+      }
+    },
+    "analyze_automation": {
+      "name": "Automation analysieren",
+      "description": "Prüft eine Home Assistant Automation auf Fehler, Race Conditions und empfiehlt optimiertes YAML.",
+      "fields": {
+        "automation_entity_id": {
+          "name": "Automations-Entität",
+          "description": "Entitäts-ID einer bestehenden Automation."
+        },
+        "automation_yaml": {
+          "name": "Rohes Automations-YAML",
+          "description": "Alternatives rohes YAML zur Prüfung."
+        },
+        "custom_prompt": {
+          "name": "Eigene Anweisung",
+          "description": "Zusätzliche Wünsche oder Einschränkungen."
+        },
+        "model": {
+          "name": "Modell",
+          "description": "Zu verwendendes Modell."
+        }
+      }
+    },
+    "suggest_automations": {
+      "name": "Automationen vorschlagen",
+      "description": "Scannt Smart-Home-Entitäten und generiert passende YAML-Automationen.",
+      "fields": {
+        "domains": {
+          "name": "Ziel-Domänen",
+          "description": "Liste der Domänen (z. B. light, climate, binary_sensor)."
+        },
+        "entity_limit": {
+          "name": "Entitäten-Limit",
+          "description": "Maximale Anzahl an Geräten zur Analyse."
+        },
+        "custom_prompt": {
+          "name": "Gewünschter Fokus",
+          "description": "Eigener Schwerpunkt (z. B. Energiesparen, Nachtruhe)."
+        },
+        "send_notification": {
+          "name": "Benachrichtigung senden",
+          "description": "Vorschläge als dauerhafte Benachrichtigung in HA anlegen."
+        }
+      }
+    },
+    "diagnose_logs": {
+      "name": "Fehlerprotokoll diagnostizieren",
+      "description": "Analysiert Home Assistant Fehler-Logs und liefert konkrete Lösungsschritte.",
+      "fields": {
+        "log_text": {
+          "name": "Log-Ausschnitt",
+          "description": "Optionaler roher Fehler-Log zur Analyse."
+        },
+        "hours_back": {
+          "name": "Stunden rückblickend",
+          "description": "Stunden der jüngsten Fehler zur Analyse."
+        },
+        "custom_prompt": {
+          "name": "Eigener Kontext",
+          "description": "Zusätzliche Details zum Fehler."
+        }
+      }
+    },
+    "analyze_camera": {
+      "name": "Kamera analysieren",
+      "description": "Erfasst ein Live-Kamerabild und analysiert die Szene mit Jules Computer Vision.",
+      "fields": {
+        "camera_entity_id": {
+          "name": "Kamera-Entität",
+          "description": "Zielkamera für die Aufnahme."
+        },
+        "prompt": {
+          "name": "Vision-Prompt",
+          "description": "Anweisung oder Frage zum Bild."
+        },
+        "model": {
+          "name": "Vision-Modell",
+          "description": "Zu verwendendes Vision-Modell."
+        }
+      }
+    },
+    "list_sessions": {
+      "name": "Sitzungen auflisten",
+      "description": "Listet aktuelle Google Jules Codierungs-Sitzungen mit Status und Metadaten auf.",
+      "fields": {
+        "page_size": {
+          "name": "Seitengröße",
+          "description": "Maximale Anzahl zurückzugebender Sitzungen."
+        },
+        "page_token": {
+          "name": "Seiten-Token",
+          "description": "Token für die Paginierung."
+        },
+        "filter": {
+          "name": "Filterausdruck",
+          "description": "Optionaler Filterausdruck."
+        },
+        "entry_id": {
+          "name": "Konfigurationseintrag-ID",
+          "description": "Ziel-Konfigurationseintrag-ID."
+        }
+      }
+    },
+    "get_session_state": {
+      "name": "Sitzungsstatus abrufen",
+      "description": "Ruft den vollständigen Status und Dashboard-Überblick für eine Jules-Sitzung ab.",
+      "fields": {
+        "session_id": {
+          "name": "Sitzungs-ID",
+          "description": "ID der Jules-Sitzung."
+        },
+        "entry_id": {
+          "name": "Konfigurationseintrag-ID",
+          "description": "Ziel-Konfigurationseintrag-ID."
+        }
+      }
+    },
+    "get_bash_outputs": {
+      "name": "Bash-Ausgaben abrufen",
+      "description": "Ruft von Jules ausgeführte Terminalbefehle, Ausgaben und Zusammenfassungen ab.",
+      "fields": {
+        "session_id": {
+          "name": "Sitzungs-ID",
+          "description": "ID der Jules-Sitzung."
+        },
+        "entry_id": {
+          "name": "Konfigurationseintrag-ID",
+          "description": "Ziel-Konfigurationseintrag-ID."
+        }
+      }
+    },
+    "get_code_review_context": {
+      "name": "Code-Review abrufen",
+      "description": "Ruft eine strukturierte Code-Review-Zusammenfassung inklusive geänderter Dateien und Diff-Statistiken ab.",
+      "fields": {
+        "session_id": {
+          "name": "Sitzungs-ID",
+          "description": "ID der Jules-Sitzung."
+        },
+        "entry_id": {
+          "name": "Konfigurationseintrag-ID",
+          "description": "Ziel-Konfigurationseintrag-ID."
+        }
+      }
+    },
+    "show_code_diff": {
+      "name": "Code-Diff anzeigen",
+      "description": "Ruft Unified Git-Diff-Patches einer Jules-Sitzung ab, optional gefiltert nach Datei oder Aktivität.",
+      "fields": {
+        "session_id": {
+          "name": "Sitzungs-ID",
+          "description": "ID der Jules-Sitzung."
+        },
+        "file": {
+          "name": "Dateifilter",
+          "description": "Optionaler Dateipfad zum Filtern des Git-Diffs."
+        },
+        "activity_id": {
+          "name": "Aktivitäts-ID",
+          "description": "Optionale Aktivitäts-ID zur Prüfung."
+        },
+        "entry_id": {
+          "name": "Konfigurationseintrag-ID",
+          "description": "Ziel-Konfigurationseintrag-ID."
+        }
+      }
+    },
+    "send_reply": {
+      "name": "Antwort senden",
+      "description": "Sendet eine Antwort an eine aktive Jules-Sitzung (Plan genehmigen, Feedback senden oder Frage stellen).",
+      "fields": {
+        "session_id": {
+          "name": "Sitzungs-ID",
+          "description": "Ziel-Sitzungs-ID."
+        },
+        "action": {
+          "name": "Aktion",
+          "description": "Aktionstyp: approve, send oder ask."
+        },
+        "message": {
+          "name": "Nachricht",
+          "description": "Nachricht oder Rückfragetext."
+        },
+        "plan_id": {
+          "name": "Plan-ID",
+          "description": "Optionale zu genehmigende Plan-ID."
+        },
+        "entry_id": {
+          "name": "Konfigurationseintrag-ID",
+          "description": "Ziel-Konfigurationseintrag-ID."
+        }
+      }
+    },
+    "get_session_activities": {
+      "name": "Sitzungsaktivitäten abrufen",
+      "description": "Ruft den chronologischen Ablauf von Gedanken, Plänen und Terminalausgaben einer Jules-Codingsitzung ab.",
+      "fields": {
+        "session_id": {
+          "name": "Sitzungs-ID",
+          "description": "ID der Sitzung (Standard: neueste Sitzung)."
+        },
+        "entry_id": {
+          "name": "Konfigurationseintrag-ID",
+          "description": "Ziel-Konfigurationseintrag-ID."
+        }
+      }
+    },
+    "get_fleet_status": {
+      "name": "Flottenstatus abrufen",
+      "description": "Aggregiert Kontingent, Nutzung und Status über alle konfigurierten Jules-Konten und empfiehlt das Konto mit der höchsten verbleibenden Kapazität."
+    },
+    "sync_sources": {
+      "name": "Quellen synchronisieren",
+      "description": "Aktualisiert die autorisierten GitHub-Repositories für ein oder alle Jules-Konten.",
       "fields": {
         "entry_id": {
           "name": "Konfigurationseintrag-ID",
-          "description": "Optionale ID des Konfigurationseintrags."
+          "description": "Optionale Eintrags-ID (Standard: alle konfigurierten Konten)."
         }
       }
+    }
+  },
+  "issues": {
+    "auth_failed": {
+      "title": "Google Jules Authentifizierung fehlgeschlagen",
+      "description": "Die Authentifizierung bei der Jules-API unter {api_url} ist fehlgeschlagen. Bitte überprüfen Sie den API-Schlüssel oder konfigurieren Sie die Integration neu."
+    },
+    "cannot_connect": {
+      "title": "Keine Verbindung zu Google Jules",
+      "description": "Verbindung zum Jules-API-Endpunkt unter {api_url} fehlgeschlagen: {error}"
     }
   }
 }

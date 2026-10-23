@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -12,6 +13,7 @@ from .client import JulesClient
 from .const import (
     CONF_API_KEY,
     CONF_API_URL,
+    CONF_TOKEN_COMPRESSION,
     DATA_CLIENT,
     DATA_COORDINATOR,
     DEFAULT_API_URL,
@@ -24,6 +26,12 @@ from .coordinator import JulesDataUpdateCoordinator
 from .services import async_setup_services, async_unload_services
 
 
+async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
+    """Set up Google Jules integration services."""
+    hass.data.setdefault(DOMAIN, {})
+    return True
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Google Jules from a config entry."""
     hass.data.setdefault(DOMAIN, {})
@@ -33,6 +41,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     session = async_get_clientsession(hass)
     client = JulesClient(session=session, api_key=api_key, api_url=api_url)
+    client.compression_enabled = entry.options.get(
+        CONF_TOKEN_COMPRESSION,
+        entry.data.get(CONF_TOKEN_COMPRESSION, True),
+    )
 
     scan_interval_sec = entry.options.get("scan_interval", DEFAULT_SCAN_INTERVAL)
     coordinator = JulesDataUpdateCoordinator(
@@ -48,6 +60,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         DATA_CLIENT: client,
         DATA_COORDINATOR: coordinator,
     }
+
+    from homeassistant.helpers import device_registry as dr
+
+    from .helpers import get_jules_version
+
+    dev_reg = dr.async_get(hass)
+    dev_reg.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, entry.entry_id)},
+        name=entry.title or "Google Jules",
+        manufacturer="Google Labs",
+        model="Autonomous AI Coding Agent",
+        sw_version=get_jules_version(entry),
+        configuration_url=entry.data.get(CONF_API_URL, "https://jules.google.com"),
+    )
 
     # Register services
     await async_setup_services(hass)
@@ -77,5 +104,21 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Reload config entry."""
-    await hass.config_entries.async_reload(entry.entry_id)
+    """Handle options update without an unnecessary full reload.
+
+    A full reload is only triggered when scan_interval changes (as the
+    coordinator update_interval cannot be modified at runtime), or if
+    the coordinator instance is missing. For other changes, simply
+    refreshes the coordinator.
+    """
+    entry_data = hass.data.get(DOMAIN, {}).get(entry.entry_id, {})
+    coordinator = entry_data.get(DATA_COORDINATOR) or entry_data.get("coordinator")
+    if coordinator is not None:
+        new_scan_interval = entry.options.get("scan_interval", DEFAULT_SCAN_INTERVAL)
+        if coordinator.update_interval != timedelta(seconds=new_scan_interval):
+            await hass.config_entries.async_reload(entry.entry_id)
+            return
+        await coordinator.async_request_refresh()
+    else:
+        # Coordinator not found — fall back to full reload
+        await hass.config_entries.async_reload(entry.entry_id)

@@ -12,12 +12,12 @@ from homeassistant.components.binary_sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DATA_COORDINATOR, DEFAULT_NAME, DOMAIN
+from .const import DATA_COORDINATOR, DOMAIN
 from .coordinator import JulesDataUpdateCoordinator
+from .helpers import get_device_info
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -51,6 +51,22 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[JulesBinarySensorDescription, ...] = (
         is_on_fn=lambda coord: bool(
             coord.data and coord.data.get("awaiting_approval", 0) > 0
         ),
+    ),
+    JulesBinarySensorDescription(
+        key="quota_exceeded",
+        translation_key="quota_exceeded",
+        device_class=BinarySensorDeviceClass.PROBLEM,
+        icon="mdi:alert-circle-outline",
+        is_on_fn=lambda coord: bool(
+            coord.data and coord.data.get("remaining_quota", 100) <= 0
+        ),
+    ),
+    JulesBinarySensorDescription(
+        key="pr_ready",
+        translation_key="pr_ready",
+        icon="mdi:git-pull-request",
+        entity_registry_enabled_default=False,
+        is_on_fn=lambda coord: bool(coord.data and bool(coord.data.get("latest_pr"))),
     ),
 )
 
@@ -92,14 +108,7 @@ class JulesBinarySensorEntity(
         self._attr_unique_id = f"{entry.entry_id}_{description.key}"
         self._attr_has_entity_name = True
 
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            name=entry.title or DEFAULT_NAME,
-            manufacturer="Google",
-            model="Jules AI Coding Agent",
-            sw_version="2026.10.0",
-            configuration_url="https://jules.google",
-        )
+        self._attr_device_info = get_device_info(entry)
 
     @property
     def is_on(self) -> bool:
