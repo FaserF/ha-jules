@@ -95,61 +95,61 @@
   },
   "services": {
     "create_session": {
-      "default": "mdi:play-circle-outline"
+      "service": "mdi:play-circle-outline"
     },
     "cancel_session": {
-      "default": "mdi:stop-circle-outline"
+      "service": "mdi:stop-circle-outline"
     },
     "list_sessions": {
-      "default": "mdi:format-list-bulleted"
+      "service": "mdi:format-list-bulleted"
     },
     "get_session_state": {
-      "default": "mdi:view-dashboard-outline"
+      "service": "mdi:view-dashboard-outline"
     },
     "get_bash_outputs": {
-      "default": "mdi:console-line"
+      "service": "mdi:console-line"
     },
     "get_code_review_context": {
-      "default": "mdi:file-document-check-outline"
+      "service": "mdi:file-document-check-outline"
     },
     "show_code_diff": {
-      "default": "mdi:file-compare"
+      "service": "mdi:file-compare"
     },
     "send_reply": {
-      "default": "mdi:reply-outline"
+      "service": "mdi:reply-outline"
     },
     "approve_plan": {
-      "default": "mdi:check-bold"
+      "service": "mdi:check-bold"
     },
     "send_message": {
-      "default": "mdi:send-outline"
+      "service": "mdi:send-outline"
     },
     "refresh_sessions": {
-      "default": "mdi:sync"
+      "service": "mdi:sync"
     },
     "execute_ai_task": {
-      "default": "mdi:brain"
+      "service": "mdi:brain"
     },
     "analyze_automation": {
-      "default": "mdi:robot-confused-outline"
+      "service": "mdi:robot-outline"
     },
     "suggest_automations": {
-      "default": "mdi:lightbulb-auto-outline"
+      "service": "mdi:lightbulb-auto-outline"
     },
     "diagnose_logs": {
-      "default": "mdi:file-find-outline"
+      "service": "mdi:file-find-outline"
     },
     "analyze_camera": {
-      "default": "mdi:camera-account"
+      "service": "mdi:camera-account"
     },
     "get_session_activities": {
-      "default": "mdi:timeline-clock-outline"
+      "service": "mdi:timeline-clock-outline"
     },
     "get_fleet_status": {
-      "default": "mdi:server-network"
+      "service": "mdi:server-network"
     },
     "sync_sources": {
-      "default": "mdi:source-repository"
+      "service": "mdi:source-repository"
     }
   }
 }
